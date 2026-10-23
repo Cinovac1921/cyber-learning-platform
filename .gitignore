@@ -18,3 +18,4 @@ Thumbs.db
 .idea/
 *.log
 *.tsbuildinfo
+backend/src/generated/
