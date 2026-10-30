@@ -13,14 +13,52 @@ enum Role {
   INSTRUCTOR
 }
 
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
   passwordHash String
   displayName  String
   role         Role     @default(STUDENT)
+  courses      Course[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@map("users")
+}
+
+model Course {
+  id        Int         @id @default(autoincrement())
+  title     String      @db.VarChar(120)
+  slug      String      @unique @db.VarChar(120)
+  summary   String      @db.VarChar(300)
+  level     CourseLevel @default(BEGINNER)
+  published Boolean     @default(false)
+  author    User        @relation(fields: [authorId], references: [id])
+  authorId  Int
+  lessons   Lesson[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([authorId])
+  @@map("courses")
+}
+
+model Lesson {
+  id        Int      @id @default(autoincrement())
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId  Int
+  position  Int
+  title     String   @db.VarChar(160)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, position])
+  @@map("lessons")
 }
