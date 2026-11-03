@@ -7,6 +7,9 @@ import { ChallengesPage } from '../features/challenges/ChallengesPage'
 import { CoursesPage } from '../features/courses/CoursesPage'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { InstructorPage } from '../features/instructor/InstructorPage'
+import { CourseEditorPage } from '../features/instructor/CourseEditorPage'
+import { LessonEditorPage } from '../features/instructor/LessonEditorPage'
+import { NewCoursePage } from '../features/instructor/NewCoursePage'
 import { CoursePage } from '../features/courses/CoursePage'
 import { LessonPage } from '../features/lessons/LessonPage'
 import { NotFoundPage } from '../features/NotFoundPage'
@@ -41,7 +44,13 @@ export const router = createBrowserRouter([
       },
       {
         element: <RequireAuth role="INSTRUCTOR" />,
-        children: [{ path: 'instructor', element: <InstructorPage /> }],
+                children: [
+          { path: 'instructor', element: <InstructorPage /> },
+          { path: 'instructor/courses/new', element: <NewCoursePage /> },
+          { path: 'instructor/courses/:id', element: <CourseEditorPage /> },
+          { path: 'instructor/courses/:id/lessons/new', element: <LessonEditorPage /> },
+          { path: 'instructor/courses/:id/lessons/:lessonId', element: <LessonEditorPage /> },
+        ],
       },
       { path: '*', element: <NotFoundPage /> },
     ],

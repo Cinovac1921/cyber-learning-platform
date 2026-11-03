@@ -8,21 +8,24 @@ export interface CourseSummary {
   summary: string
   level: CourseLevel
   lessonCount: number
+  completedLessons: number
 }
 
 export interface LessonOutline {
   id: number
   position: number
   title: string
+  completed: boolean
 }
 
-/** One course with its lesson titles. */
+/** One course with its lessons. */
 export interface CourseDetail {
   id: number
   title: string
   slug: string
   summary: string
   level: CourseLevel
+  completedLessons: number
   lessons: LessonOutline[]
 }
 
@@ -32,6 +35,7 @@ export interface LessonDetail {
   position: number
   title: string
   content: string
+  completed: boolean
   course: { title: string; slug: string }
   previousPosition: number | null
   nextPosition: number | null

@@ -12,3 +12,11 @@ export function getCourse(slug: string, signal?: AbortSignal) {
 export function getLesson(slug: string, position: number, signal?: AbortSignal) {
   return api.get<LessonDetail>(`/courses/${encodeURIComponent(slug)}/lessons/${position}`, { signal })
 }
+
+/** Marks a lesson as done (completed = true) or not done (false). */
+export function setLessonCompleted(slug: string, position: number, completed: boolean) {
+  const path = `/courses/${encodeURIComponent(slug)}/lessons/${position}/complete`
+  return completed
+    ? api.post<{ completed: boolean }>(path)
+    : api.delete<{ completed: boolean }>(path)
+}

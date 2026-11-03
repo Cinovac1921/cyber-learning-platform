@@ -4,6 +4,7 @@ import { useResource } from '../../app/useResource'
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
+import { ProgressBar } from '../../components/ProgressBar'
 import { levelLabel } from './levels'
 
 export function CoursesPage() {
@@ -34,11 +35,19 @@ export function CoursesPage() {
               <span className="chip">{levelLabel(course.level)}</span>
               <h3>{course.title}</h3>
               <p className="course-card__summary">{course.summary}</p>
-              <p className="course-card__meta">
-                {course.lessonCount} {course.lessonCount === 1 ? 'lesson' : 'lessons'}
-              </p>
+              <div className="course-card__progress">
+                <ProgressBar done={course.completedLessons} total={course.lessonCount} />
+                <p className="course-card__meta">
+                  {course.completedLessons} of {course.lessonCount}{' '}
+                  {course.lessonCount === 1 ? 'lesson' : 'lessons'} done
+                </p>
+              </div>
               <Link to={`/courses/${course.slug}`} className="button button--block">
-                View course
+                {course.completedLessons === 0
+                  ? 'View course'
+                  : course.completedLessons >= course.lessonCount
+                    ? 'Review course'
+                    : 'Continue course'}
               </Link>
             </article>
           ))}
