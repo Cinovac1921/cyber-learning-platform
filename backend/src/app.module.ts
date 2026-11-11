@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AssessmentsModule } from './assessments/assessments.module';
 import { AuthModule } from './auth/auth.module';
 import { CoursesModule } from './courses/courses.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -13,6 +14,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     AuthModule,
     CoursesModule,
+    AssessmentsModule,
     DashboardModule,
     InstructorModule,
     HealthModule,

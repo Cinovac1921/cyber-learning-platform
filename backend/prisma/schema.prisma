@@ -27,6 +27,7 @@ model User {
   role         Role     @default(STUDENT)
   courses      Course[]
   progress     LessonProgress[]
+  attempts     Attempt[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -43,6 +44,7 @@ model Course {
   author    User        @relation(fields: [authorId], references: [id])
   authorId  Int
   lessons   Lesson[]
+  assessments Assessment[]
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
@@ -76,4 +78,86 @@ model LessonProgress {
   @@unique([userId, lessonId])
   @@index([lessonId])
   @@map("lesson_progress")
+}
+/// A quiz that belongs to one course. Students only see it once it is published.
+model Assessment {
+  id          Int        @id @default(autoincrement())
+  course      Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId    Int
+  title       String     @db.VarChar(120)
+  description String     @default("") @db.VarChar(300)
+  passPercent Int        @default(70)
+  published   Boolean    @default(false)
+  questions   Question[]
+  attempts    Attempt[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([courseId])
+  @@map("assessments")
+}
+
+/// One multiple-choice question. Exactly one of its options is correct.
+model Question {
+  id           Int            @id @default(autoincrement())
+  assessment   Assessment     @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessmentId Int
+  position     Int
+  prompt       String         @db.VarChar(500)
+  explanation  String         @default("") @db.VarChar(500)
+  options      Option[]
+  answers      AttemptAnswer[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([assessmentId, position])
+  @@map("questions")
+}
+
+model Option {
+  id         Int             @id @default(autoincrement())
+  question   Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId Int
+  position   Int
+  text       String          @db.VarChar(250)
+  isCorrect  Boolean         @default(false)
+  answers    AttemptAnswer[]
+
+  @@unique([questionId, position])
+  @@map("options")
+}
+
+/// One time a student submitted a quiz. Score and pass mark are stored as they were then.
+model Attempt {
+  id           Int             @id @default(autoincrement())
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  assessment   Assessment      @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessmentId Int
+  correct      Int
+  total        Int
+  percent      Int
+  passed       Boolean
+  answers      AttemptAnswer[]
+  createdAt    DateTime        @default(now())
+
+  @@index([userId, assessmentId])
+  @@index([assessmentId])
+  @@map("attempts")
+}
+
+model AttemptAnswer {
+  id         Int       @id @default(autoincrement())
+  attempt    Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  attemptId  Int
+  question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId Int
+  option     Option?   @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  optionId   Int?
+  isCorrect  Boolean
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+  @@index([optionId])
+  @@map("attempt_answers")
 }

@@ -23,7 +23,7 @@ export function DashboardPage() {
       description="Courses you are taking."
       actions={
         <Link to="/courses" className="button button--quiet">
-          + Start a new course
+          Start a new course
         </Link>
       }
     />

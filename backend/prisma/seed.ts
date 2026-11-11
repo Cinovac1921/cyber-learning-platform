@@ -94,6 +94,132 @@ const courses: SeedCourse[] = [
   },
 ];
 
+interface SeedQuestion {
+  prompt: string;
+  explanation: string;
+  /** The options in display order. */
+  options: string[];
+  /** Index of the correct option. */
+  answer: number;
+}
+
+interface SeedAssessment {
+  title: string;
+  description: string;
+  passPercent: number;
+  questions: SeedQuestion[];
+}
+
+/** One quiz per course, keyed by the course slug. */
+const assessments: Record<string, SeedAssessment> = {
+  'web-security-basics': {
+    title: 'Web security check',
+    description: 'Trust boundaries, input checks and SQL injection.',
+    passPercent: 70,
+    questions: [
+      {
+        prompt: 'Which of these is a trust boundary?',
+        explanation: 'Anything that crosses from the client to the server is controlled by the user, so the server must not assume it is safe.',
+        options: [
+          'Data sent from the browser to the server',
+          'Two variables inside the same function',
+          'A constant defined in your own code',
+          'A comment in your source code',
+        ],
+        answer: 0,
+      },
+      {
+        prompt: 'The browser already checks a form. Why must the server check the input again?',
+        explanation: 'Browser checks only help honest users. An attacker can skip the page and send requests straight to the server.',
+        options: [
+          'Servers are faster at checking than browsers',
+          'An attacker can skip the browser and send requests directly',
+          'Browsers cannot check text fields',
+          'It makes the page load more quickly',
+        ],
+        answer: 1,
+      },
+      {
+        prompt: 'What does an allow-list approach to input checking do?',
+        explanation: 'You define exactly what is valid and reject everything else, instead of trying to list every bad value.',
+        options: [
+          'Lists every known bad value and blocks only those',
+          'Accepts anything shorter than a set length',
+          'Defines exactly what is valid and rejects everything else',
+          'Trusts input from signed-in users',
+        ],
+        answer: 2,
+      },
+      {
+        prompt: 'What is the main defence against SQL injection?',
+        explanation: 'With parameterized queries the query and the data travel separately, so input is only ever treated as data.',
+        options: [
+          'Hiding the database name',
+          'Removing the word SELECT from input',
+          'Using longer passwords',
+          'Parameterized queries',
+        ],
+        answer: 3,
+      },
+    ],
+  },
+  'network-fundamentals': {
+    title: 'Network basics check',
+    description: 'Ports, DNS records and the two transport protocols.',
+    passPercent: 70,
+    questions: [
+      {
+        prompt: 'Which port does HTTPS use by default?',
+        explanation: 'HTTPS uses 443. Port 80 is HTTP and port 22 is SSH.',
+        options: ['22', '80', '443', '53'],
+        answer: 2,
+      },
+      {
+        prompt: 'Which DNS record type maps a name to an IPv4 address?',
+        explanation: 'An A record maps a name to an IPv4 address. AAAA is for IPv6, CNAME is an alias and MX is for email.',
+        options: ['A', 'AAAA', 'CNAME', 'MX'],
+        answer: 0,
+      },
+      {
+        prompt: 'Which protocol sets up a connection with a three-way handshake?',
+        explanation: 'TCP connects first and guarantees complete, ordered delivery. UDP skips the setup.',
+        options: ['UDP', 'TCP', 'DNS', 'ICMP'],
+        answer: 1,
+      },
+    ],
+  },
+  'intro-to-linux': {
+    title: 'Linux basics check',
+    description: 'Navigation, permissions and the least privilege rule.',
+    passPercent: 70,
+    questions: [
+      {
+        prompt: 'Which command shows the folder you are currently in?',
+        explanation: '`pwd` prints the working directory. `ls` lists files and `cd` changes folder.',
+        options: ['ls', 'cd', 'man', 'pwd'],
+        answer: 3,
+      },
+      {
+        prompt: 'Which command changes the permissions of a file?',
+        explanation: '`chmod` changes permissions. `chown` changes the owner.',
+        options: ['chmod', 'chown', 'ls -l', 'ps'],
+        answer: 0,
+      },
+      {
+        prompt: 'What does the principle of least privilege mean?',
+        explanation: 'Give a user or file only the access it needs, and no more.',
+        options: [
+          'Give everyone full access to keep things simple',
+          'Give only the access that is needed, and no more',
+          'Only the oldest users get access',
+          'Remove all permissions from every file',
+        ],
+        answer: 1,
+      },
+    ],
+  },
+};
+
 async function main() {
   const author = await prisma.user.findFirst({ where: { role: 'INSTRUCTOR' } });
   if (!author) {
@@ -137,6 +263,44 @@ async function main() {
       });
     }
     console.log(`Seeded "${course.title}" (${course.lessons.length} lessons)`);
+
+    const quiz = assessments[course.slug];
+    if (!quiz) continue;
+
+    // Created once and then left alone, so an instructor's edits are not overwritten.
+    const existing = await prisma.assessment.findFirst({
+      where: { courseId: saved.id, title: quiz.title },
+      select: { id: true },
+    });
+    if (existing) {
+      console.log(`  Assessment "${quiz.title}" already exists, left as it is`);
+      continue;
+    }
+
+    await prisma.assessment.create({
+      data: {
+        courseId: saved.id,
+        title: quiz.title,
+        description: quiz.description,
+        passPercent: quiz.passPercent,
+        published: true,
+        questions: {
+          create: quiz.questions.map((question, index) => ({
+            position: index + 1,
+            prompt: question.prompt,
+            explanation: question.explanation,
+            options: {
+              create: question.options.map((text, optionIndex) => ({
+                position: optionIndex + 1,
+                text,
+                isCorrect: optionIndex === question.answer,
+              })),
+            },
+          })),
+        },
+      },
+    });
+    console.log(`  Seeded assessment "${quiz.title}" (${quiz.questions.length} questions)`);
   }
 }
 

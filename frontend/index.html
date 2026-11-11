@@ -9,9 +9,9 @@
       // Apply the saved theme before the page paints, so there is no flash.
       try {
         document.documentElement.dataset.theme =
-          localStorage.getItem('cyberlearning.theme') === 'light' ? 'light' : 'dark'
+          localStorage.getItem('cyberlearning.theme') === 'dark' ? 'dark' : 'light'
       } catch (e) {
-        document.documentElement.dataset.theme = 'dark'
+        document.documentElement.dataset.theme = 'light'
       }
     </script>
   </head>

@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import { getCourse, getLesson, setLessonCompleted } from '../../api/courses'
 import { useReloadableResource, useResource } from '../../app/useResource'
 import { ErrorNotice } from '../../components/ErrorNotice'
+import { CloseIcon, MonitorIcon } from '../../components/Icons'
 import { CourseOutline } from './CourseOutline'
 import { LessonActions } from './LessonActions'
 import { LessonContent } from './LessonContent'
@@ -92,7 +93,8 @@ export function LessonPage() {
             {course.data.title} · Lesson {lesson.data.position} of {lessons.length}
           </span>
           <button type="button" className="button button--quiet button--small" onClick={() => setFocus(false)}>
-            Exit focus mode ✕
+            Exit focus mode
+            <CloseIcon size={16} />
           </button>
         </div>
 
@@ -132,7 +134,7 @@ export function LessonPage() {
         />
       </aside>
 
-      <article className="lesson-layout__main">
+      <article className="lesson-layout__main lesson-sheet">
         <header className="lesson__header">
           <div>
             <span className="chip">
@@ -140,7 +142,8 @@ export function LessonPage() {
             </span>
             <h1>{title}</h1>
           </div>
-          <button type="button" className="button button--quiet button--small" onClick={() => setFocus(true)}>
+          <button type="button" className="button button--quiet" onClick={() => setFocus(true)}>
+            <MonitorIcon size={18} />
             Focus mode
           </button>
         </header>

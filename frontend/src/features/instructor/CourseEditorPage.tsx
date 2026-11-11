@@ -5,6 +5,7 @@ import {
   deleteCourse,
   deleteLesson,
   getMyCourse,
+  listCourseAssessments,
   moveLesson,
   updateCourse,
 } from '../../api/instructor'
@@ -24,6 +25,10 @@ export function CourseEditorPage() {
     Number.isInteger(courseId) && courseId > 0
       ? getMyCourse(courseId, signal)
       : Promise.reject(new ApiError(404, 'Course not found.', null)),
+  )
+
+  const { resource: assessments } = useReloadableResource(`instructor-course-assessments:${id}`, (signal) =>
+    Number.isInteger(courseId) && courseId > 0 ? listCourseAssessments(courseId, signal) : Promise.resolve([]),
   )
 
   /** Runs an action, shows a readable error if it fails, and refreshes the data. */
@@ -178,6 +183,50 @@ export function CourseEditorPage() {
               </li>
             ))}
           </ol>
+        )}
+      </section>
+
+      <section className="editor__section">
+        <div className="editor__heading">
+          <h2>Assessments</h2>
+          <Link to={`/instructor/courses/${courseId}/assessments/new`} className="button button--small">
+            + Add assessment
+          </Link>
+        </div>
+
+        {assessments.status === 'loading' && (
+          <p className="loading" role="status">
+            Loading assessments…
+          </p>
+        )}
+
+        {assessments.status === 'error' && (
+          <p className="notice notice--error" role="alert">
+            Couldn't load the assessments for this course.
+          </p>
+        )}
+
+        {assessments.status === 'ready' && assessments.data.length === 0 && (
+          <p className="loading">No assessments yet. Add a quiz to check what students learned.</p>
+        )}
+
+        {assessments.status === 'ready' && assessments.data.length > 0 && (
+          <ul className="lesson-rows">
+            {assessments.data.map((item) => (
+              <li key={item.id} className="lesson-row">
+                <span className="lesson-row__title">{item.title}</span>
+                <span className={item.published ? 'chip chip--live' : 'chip'}>
+                  {item.published ? 'Published' : 'Draft'}
+                </span>
+                <span className="course-card__meta">
+                  {item.questionCount} {item.questionCount === 1 ? 'question' : 'questions'}
+                </span>
+                <Link to={`/instructor/assessments/${item.id}`} className="button button--quiet button--small">
+                  Edit
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

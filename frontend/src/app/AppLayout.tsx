@@ -1,4 +1,7 @@
+import type { ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router'
+import { Brand } from '../components/Brand'
+import { ChartIcon, HomeIcon, PlayIcon, TrophyIcon, WrenchIcon } from '../components/Icons'
 import { useAuth } from '../features/auth/useAuth'
 import { ThemeToggle } from './ThemeToggle'
 import { useBackendStatus, type BackendStatus } from './useBackendStatus'
@@ -9,33 +12,37 @@ const STATUS_LABEL: Record<BackendStatus, string> = {
   offline: 'Server unreachable',
 }
 
+interface NavItem {
+  to: string
+  label: string
+  icon: ReactNode
+  end?: boolean
+}
+
 export function AppLayout() {
   const backendStatus = useBackendStatus()
   const { user, logout } = useAuth()
 
-  const navItems = [
-    { to: '/', label: 'Dashboard', end: true },
-    { to: '/courses', label: 'Courses' },
-    { to: '/challenges', label: 'Challenges' },
-    { to: '/assessments', label: 'Assessments' },
-    ...(user?.role === 'INSTRUCTOR' ? [{ to: '/instructor', label: 'Instructor' }] : []),
+  const navItems: NavItem[] = [
+    { to: '/', label: 'Dashboard', icon: <HomeIcon size={20} />, end: true },
+    { to: '/courses', label: 'Courses', icon: <PlayIcon size={18} /> },
+    { to: '/challenges', label: 'Challenges', icon: <TrophyIcon size={20} /> },
+    { to: '/assessments', label: 'Assessments', icon: <ChartIcon size={20} /> },
+    ...(user?.role === 'INSTRUCTOR'
+      ? [{ to: '/instructor', label: 'Instructor', icon: <WrenchIcon size={20} /> }]
+      : []),
   ]
 
   return (
     <div className="app">
       <header className="topbar">
-        <NavLink to="/" className="topbar__brand">
-          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-            <path d="M15 2l11 6.5v13L15 28 4 21.5v-13z" fill="none" stroke="currentColor" strokeWidth="2" />
-            <path d="M10 15l3.5 3.5L20 12" fill="none" stroke="currentColor" strokeWidth="2" />
-          </svg>
-          <span>Cyber Learning</span>
-        </NavLink>
+        <Brand />
 
         {user && (
           <nav aria-label="Main" className="topbar__nav">
             {navItems.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className="topbar__link">
+                {item.icon}
                 {item.label}
               </NavLink>
             ))}
@@ -46,10 +53,15 @@ export function AppLayout() {
           <ThemeToggle />
           {user && (
             <>
-              <p className="topbar__user">
-                {user.displayName}
-                <span>{user.role === 'INSTRUCTOR' ? 'Instructor' : 'Student'}</span>
-              </p>
+              <div className="topbar__profile">
+                <span className="avatar" aria-hidden="true">
+                  {user.displayName.trim().charAt(0).toUpperCase() || '?'}
+                </span>
+                <p className="topbar__user">
+                  {user.displayName}
+                  <span>{user.role === 'INSTRUCTOR' ? 'Instructor' : 'Student'}</span>
+                </p>
+              </div>
               <button type="button" className="button button--quiet button--small" onClick={logout}>
                 Sign out
               </button>

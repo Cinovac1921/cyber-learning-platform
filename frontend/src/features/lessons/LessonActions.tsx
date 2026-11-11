@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from '../../components/Icons'
 
 interface LessonActionsProps {
   completed: boolean
@@ -25,7 +26,8 @@ export function LessonActions({
     <div className="lesson-actions">
       {previousHref ? (
         <Link to={previousHref} className="button button--quiet">
-          ← Previous
+          <ArrowLeftIcon size={18} />
+          Previous
         </Link>
       ) : (
         <span />
@@ -35,10 +37,12 @@ export function LessonActions({
         {completed ? (
           <>
             <button type="button" className="button button--quiet" disabled={saving} onClick={onUndo}>
-              ✓ Completed · Undo
+              <CheckIcon size={18} />
+              Completed · Undo
             </button>
             <Link to={nextHref ?? courseHref} className="button">
-              {nextHref ? 'Next lesson →' : 'Back to course'}
+              {nextHref ? 'Next lesson' : 'Back to course'}
+              {nextHref && <ArrowRightIcon size={18} />}
             </Link>
           </>
         ) : (
@@ -47,7 +51,8 @@ export function LessonActions({
               Mark complete
             </button>
             <button type="button" className="button" disabled={saving} onClick={onCompleteAndContinue}>
-              {nextHref ? 'Complete and continue →' : 'Finish course'}
+              {nextHref ? 'Complete and continue' : 'Finish course'}
+              {nextHref && <ArrowRightIcon size={18} />}
             </button>
           </>
         )}

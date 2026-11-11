@@ -3,6 +3,7 @@ import { listCourses } from '../../api/courses'
 import { useResource } from '../../app/useResource'
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorNotice } from '../../components/ErrorNotice'
+import { BookIcon } from '../../components/Icons'
 import { PageHeader } from '../../components/PageHeader'
 import { ProgressBar } from '../../components/ProgressBar'
 import { levelLabel } from './levels'
@@ -32,7 +33,12 @@ export function CoursesPage() {
         <div className="course-grid">
           {courses.data.map((course) => (
             <article key={course.id} className="course-card">
-              <span className="chip">{levelLabel(course.level)}</span>
+              <div className="course-card__head">
+                <span className="tile" aria-hidden="true">
+                  <BookIcon size={22} />
+                </span>
+                <span className="chip">{levelLabel(course.level)}</span>
+              </div>
               <h3>{course.title}</h3>
               <p className="course-card__summary">{course.summary}</p>
               <div className="course-card__progress">

@@ -1,8 +1,12 @@
 import type {
+  AssessmentInput,
   CourseInput,
+  InstructorAssessment,
+  InstructorAssessmentSummary,
   InstructorCourse,
   InstructorCourseSummary,
   LessonInput,
+  QuestionInput,
 } from '../types/instructor'
 import { api } from './client'
 
@@ -42,4 +46,40 @@ export function deleteLesson(lessonId: number) {
 
 export function moveLesson(lessonId: number, direction: 'up' | 'down') {
   return api.post<Ok>(`/instructor/lessons/${lessonId}/move`, { direction })
+}
+
+export function listCourseAssessments(courseId: number, signal?: AbortSignal) {
+  return api.get<InstructorAssessmentSummary[]>(`/instructor/courses/${courseId}/assessments`, { signal })
+}
+
+export function createAssessment(courseId: number, input: AssessmentInput) {
+  return api.post<{ id: number }>(`/instructor/courses/${courseId}/assessments`, input)
+}
+
+export function getMyAssessment(id: number, signal?: AbortSignal) {
+  return api.get<InstructorAssessment>(`/instructor/assessments/${id}`, { signal })
+}
+
+export function updateAssessment(id: number, changes: Partial<AssessmentInput> & { published?: boolean }) {
+  return api.patch<Ok>(`/instructor/assessments/${id}`, changes)
+}
+
+export function deleteAssessment(id: number) {
+  return api.delete<Ok>(`/instructor/assessments/${id}`)
+}
+
+export function addQuestion(assessmentId: number, input: QuestionInput) {
+  return api.post<{ id: number; position: number }>(`/instructor/assessments/${assessmentId}/questions`, input)
+}
+
+export function updateQuestion(questionId: number, input: QuestionInput) {
+  return api.put<Ok>(`/instructor/questions/${questionId}`, input)
+}
+
+export function deleteQuestion(questionId: number) {
+  return api.delete<Ok>(`/instructor/questions/${questionId}`)
+}
+
+export function moveQuestion(questionId: number, direction: 'up' | 'down') {
+  return api.post<Ok>(`/instructor/questions/${questionId}/move`, { direction })
 }

@@ -1,4 +1,6 @@
 import { createBrowserRouter } from 'react-router'
+import { AssessmentPage } from '../features/assessments/AssessmentPage'
+import { AssessmentResultPage } from '../features/assessments/AssessmentResultPage'
 import { AssessmentsPage } from '../features/assessments/AssessmentsPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { RegisterPage } from '../features/auth/RegisterPage'
@@ -7,8 +9,10 @@ import { ChallengesPage } from '../features/challenges/ChallengesPage'
 import { CoursesPage } from '../features/courses/CoursesPage'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { InstructorPage } from '../features/instructor/InstructorPage'
+import { AssessmentEditorPage } from '../features/instructor/AssessmentEditorPage'
 import { CourseEditorPage } from '../features/instructor/CourseEditorPage'
 import { LessonEditorPage } from '../features/instructor/LessonEditorPage'
+import { NewAssessmentPage } from '../features/instructor/NewAssessmentPage'
 import { NewCoursePage } from '../features/instructor/NewCoursePage'
 import { CoursePage } from '../features/courses/CoursePage'
 import { LessonPage } from '../features/lessons/LessonPage'
@@ -40,6 +44,8 @@ export const router = createBrowserRouter([
           { path: 'courses/:slug/lessons/:position', element: <LessonPage /> },
           { path: 'challenges', element: <ChallengesPage /> },
           { path: 'assessments', element: <AssessmentsPage /> },
+          { path: 'assessments/:id', element: <AssessmentPage /> },
+          { path: 'assessments/:id/results/:attemptId', element: <AssessmentResultPage /> },
         ],
       },
       {
@@ -50,6 +56,8 @@ export const router = createBrowserRouter([
           { path: 'instructor/courses/:id', element: <CourseEditorPage /> },
           { path: 'instructor/courses/:id/lessons/new', element: <LessonEditorPage /> },
           { path: 'instructor/courses/:id/lessons/:lessonId', element: <LessonEditorPage /> },
+          { path: 'instructor/courses/:id/assessments/new', element: <NewAssessmentPage /> },
+          { path: 'instructor/assessments/:assessmentId', element: <AssessmentEditorPage /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },
