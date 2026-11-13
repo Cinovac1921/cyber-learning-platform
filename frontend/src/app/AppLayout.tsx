@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { Brand } from '../components/Brand'
 import { ChartIcon, HomeIcon, PlayIcon, TrophyIcon, WrenchIcon } from '../components/Icons'
@@ -22,6 +22,7 @@ interface NavItem {
 export function AppLayout() {
   const backendStatus = useBackendStatus()
   const { user, logout } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const navItems: NavItem[] = [
     { to: '/', label: 'Dashboard', icon: <HomeIcon size={20} />, end: true },
@@ -35,17 +36,30 @@ export function AppLayout() {
 
   return (
     <div className="app">
-      <header className="topbar">
+      <header
+        className={menuOpen ? 'topbar is-open' : 'topbar'}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setMenuOpen(false)
+        }}
+      >
         <Brand />
 
         {user && (
-          <nav aria-label="Main" className="topbar__nav">
+          <nav
+            id="main-nav"
+            aria-label="Main"
+            className="topbar__nav"
+            onClick={() => setMenuOpen(false)}
+          >
             {navItems.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className="topbar__link">
                 {item.icon}
                 {item.label}
               </NavLink>
             ))}
+            <button type="button" className="topbar__link topbar__signout" onClick={logout}>
+              Sign out
+            </button>
           </nav>
         )}
 
@@ -62,8 +76,22 @@ export function AppLayout() {
                   <span>{user.role === 'INSTRUCTOR' ? 'Instructor' : 'Student'}</span>
                 </p>
               </div>
-              <button type="button" className="button button--quiet button--small" onClick={logout}>
+              <button
+                type="button"
+                className="button button--quiet button--small topbar__logout"
+                onClick={logout}
+              >
                 Sign out
+              </button>
+              <button
+                type="button"
+                className="topbar__menu"
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={menuOpen}
+                aria-controls="main-nav"
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                <span aria-hidden="true" />
               </button>
             </>
           )}

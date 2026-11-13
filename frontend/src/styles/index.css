@@ -251,6 +251,75 @@ a {
   margin-left: auto;
 }
 
+.topbar__menu,
+.topbar__signout {
+  display: none;
+}
+
+.topbar__signout {
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.topbar__menu {
+  position: relative;
+  flex: none;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--toggle-bg);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.topbar__menu span,
+.topbar__menu span::before,
+.topbar__menu span::after {
+  display: block;
+  width: 1.15rem;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.topbar__menu span {
+  position: relative;
+}
+
+.topbar__menu span::before,
+.topbar__menu span::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.topbar__menu span::before {
+  top: -6px;
+}
+
+.topbar__menu span::after {
+  top: 6px;
+}
+
+.topbar.is-open .topbar__menu span {
+  background: transparent;
+}
+
+.topbar.is-open .topbar__menu span::before {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.topbar.is-open .topbar__menu span::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 .topbar__profile {
   display: flex;
   align-items: center;
@@ -367,6 +436,7 @@ a {
 
 .page-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-end;
   gap: 1.5rem;
@@ -1378,6 +1448,7 @@ a {
 
 .editor__heading {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
@@ -1585,6 +1656,7 @@ a {
 
 .quiz__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 1rem;
 }
@@ -1831,15 +1903,74 @@ a {
 }
 
 /* Narrow desktops: drop the nav icons so five tabs and the account area still fit. */
-@media (min-width: 901px) and (max-width: 1280px) {
+@media (min-width: 1181px) and (max-width: 1280px) {
   .topbar__link svg {
     display: none;
   }
 }
 
-@media (max-width: 1100px) {
+/* Anything narrower: the tabs move into a menu under the bar, so nothing is squeezed or overlaps. */
+@media (max-width: 1180px) {
+  .topbar__menu {
+    display: grid;
+  }
+
+  .topbar__nav {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    left: 0;
+    right: 0;
+    display: none;
+    flex: none;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0.6rem;
+    border: 1px solid var(--nav-line);
+    border-radius: 28px;
+    background: var(--panel);
+    box-shadow: var(--shadow-nav);
+  }
+
+  .topbar.is-open .topbar__nav {
+    display: flex;
+  }
+
+  .topbar__link {
+    padding: 0.85rem 1.1rem;
+  }
+
+  .topbar__tools {
+    gap: 0.75rem;
+  }
+
   .topbar__profile {
-    padding: 0 0.9rem 0 0.9rem;
+    padding: 0 0.75rem;
+  }
+}
+
+/* Phones: sign out moves into the menu and the brand name gives way to the logo. */
+@media (max-width: 640px) {
+  .topbar {
+    padding-left: 1rem;
+  }
+
+  .topbar__logout,
+  .topbar__profile {
+    display: none;
+  }
+
+  .topbar__signout {
+    display: inline-flex;
+    margin-top: 0.3rem;
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 999px 999px;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand span {
+    display: none;
   }
 }
 
@@ -1874,17 +2005,6 @@ a {
     display: none;
   }
 
-  .topbar {
-    flex-wrap: wrap;
-    border-radius: 32px;
-  }
-
-  .topbar__nav {
-    order: 3;
-    flex-basis: 100%;
-    margin-left: 0;
-    overflow-x: auto;
-  }
 }
 
 @media (max-width: 760px) {
@@ -1915,11 +2035,6 @@ a {
 
   .content {
     padding-top: 2rem;
-  }
-
-  .topbar__profile {
-    border-inline: 0;
-    padding: 0;
   }
 
   .timeline__card {
