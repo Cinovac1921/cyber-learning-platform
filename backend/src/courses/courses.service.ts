@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PUBLIC_COURSE, VISIBLE_LESSON } from './visibility';
+import { courseVisibleTo, PUBLIC_COURSE, VISIBLE_LESSON } from './visibility';
 
 @Injectable()
 export class CoursesService {
@@ -39,10 +39,10 @@ export class CoursesService {
     }));
   }
 
-  /** One course with its lessons and which of them the user finished. */
+  /** One course (public, or from one of the user's classrooms) with its lessons and which they finished. */
   async findBySlug(slug: string, userId: number) {
     const course = await this.prisma.course.findFirst({
-      where: { slug, ...PUBLIC_COURSE },
+      where: { slug, ...courseVisibleTo(userId) },
       select: {
         id: true,
         title: true,
@@ -83,7 +83,7 @@ export class CoursesService {
   /** One lesson with its text, neighbours and whether the user finished it. */
   async findLesson(slug: string, position: number, userId: number) {
     const lesson = await this.prisma.lesson.findFirst({
-      where: { position, ...VISIBLE_LESSON, course: { slug, ...PUBLIC_COURSE } },
+      where: { position, ...VISIBLE_LESSON, course: { slug, ...courseVisibleTo(userId) } },
       select: {
         id: true,
         courseId: true,
@@ -134,7 +134,7 @@ export class CoursesService {
   /** Marks a lesson done (or not done) for the user. Safe to repeat. */
   async setLessonCompleted(slug: string, position: number, userId: number, completed: boolean) {
     const lesson = await this.prisma.lesson.findFirst({
-      where: { position, ...VISIBLE_LESSON, course: { slug, ...PUBLIC_COURSE } },
+      where: { position, ...VISIBLE_LESSON, course: { slug, ...courseVisibleTo(userId) } },
       select: { id: true },
     });
 

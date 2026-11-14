@@ -3,7 +3,7 @@ jest.mock('../prisma/prisma.service', () => ({
   PrismaService: class PrismaService {},
 }));
 
-import { PUBLIC_COURSE, VISIBLE_LESSON } from '../courses/visibility';
+import { courseVisibleTo, PUBLIC_COURSE, VISIBLE_LESSON } from '../courses/visibility';
 import type { PrismaService } from '../prisma/prisma.service';
 import { DashboardService } from './dashboard.service';
 
@@ -48,12 +48,12 @@ describe('DashboardService.get', () => {
     expect(data.courses[0].nextLesson).toEqual({ id: 12, number: 2, position: 3, title: 'B' });
   });
 
-  it('only counts progress on public courses and visible lessons', async () => {
+  it('only counts progress on courses this student may open and visible lessons', async () => {
     const { service, prisma } = makeService({});
     await service.get(7, 0, NOW);
     expect(prisma.lessonProgress.findMany.mock.calls[0][0].where.lesson).toEqual({
       ...VISIBLE_LESSON,
-      course: PUBLIC_COURSE,
+      course: courseVisibleTo(7),
     });
   });
 

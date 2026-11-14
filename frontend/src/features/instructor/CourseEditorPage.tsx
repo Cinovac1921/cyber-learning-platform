@@ -62,7 +62,7 @@ export function CourseEditorPage() {
     return <ErrorNotice error={course.error} />
   }
 
-  const { title, slug, summary, level, published, scope, lessons } = course.data
+  const { title, slug, summary, level, published, scope, classroom, lessons } = course.data
   const details: CourseInput = { title, summary, level }
 
   async function saveDetails(values: CourseInput) {
@@ -111,10 +111,15 @@ export function CourseEditorPage() {
         <p className="toolbar">
           <span className={published ? 'chip chip--live' : 'chip'}>{published ? 'Published' : 'Draft'}</span>
           {scope === 'TEMPLATE' && <span className="chip">Template</span>}
+          {scope === 'CLASSROOM' && classroom && <span className="chip">{classroom.name}</span>}
           <span className="course-card__meta">
             {scope === 'TEMPLATE'
               ? 'This is a template. Students never see it, whether or not it is published.'
-              : published
+              : scope === 'CLASSROOM'
+                ? published
+                  ? `Only the students of ${classroom?.name ?? 'this classroom'} can see this course.`
+                  : 'A draft. Once published, only your classroom students can see it.'
+                : published
                 ? 'Students can see this course.'
                 : 'Only you can see this course. Add lessons, then publish.'}
           </span>
@@ -132,7 +137,7 @@ export function CourseEditorPage() {
         <CourseForm initial={details} submitLabel="Save details" onSubmit={saveDetails} />
       </section>
 
-      {user?.role === 'ADMIN' && (
+      {user?.role === 'ADMIN' && scope !== 'CLASSROOM' && (
         <section className="editor__section">
           <h2>Visibility</h2>
           <ScopeControl scope={scope} onSave={(next) => run(() => updateCourse(courseId, { scope: next }))} />

@@ -1,7 +1,7 @@
 import type { CourseLevel } from './learning'
 
 /** PUBLIC shows in the public library. TEMPLATE is starter content students never see. */
-export type CourseScope = 'PUBLIC' | 'TEMPLATE'
+export type CourseScope = 'PUBLIC' | 'TEMPLATE' | 'CLASSROOM'
 
 export interface InstructorCourseSummary {
   id: number
@@ -11,6 +11,7 @@ export interface InstructorCourseSummary {
   level: CourseLevel
   published: boolean
   scope: CourseScope
+  classroom: { name: string } | null
   updatedAt: string
   lessonCount: number
 }
@@ -31,6 +32,7 @@ export interface InstructorCourse {
   level: CourseLevel
   published: boolean
   scope: CourseScope
+  classroom: { id: number; name: string } | null
   lessons: InstructorLesson[]
 }
 
@@ -38,6 +40,8 @@ export interface CourseInput {
   title: string
   summary: string
   level: CourseLevel
+  /** Create the course inside one of the instructor's classrooms. Leave out for the public library. */
+  classroomId?: number
 }
 
 export interface LessonInput {

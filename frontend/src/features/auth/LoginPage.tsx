@@ -2,10 +2,11 @@ import { useState, type SyntheticEvent } from 'react'
 import { Link, Navigate, useLocation } from 'react-router'
 import { ApiError } from '../../api/client'
 import { PageHeader } from '../../components/PageHeader'
+import { destinationFor } from './roles'
 import { useAuth } from './useAuth'
 
 export function LoginPage() {
-  const { status, login } = useAuth()
+  const { status, user, login } = useAuth()
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
@@ -13,7 +14,7 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
 
   if (status === 'signedIn') {
-    return <Navigate to={from} replace />
+    return <Navigate to={destinationFor(from, user?.role)} replace />
   }
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {

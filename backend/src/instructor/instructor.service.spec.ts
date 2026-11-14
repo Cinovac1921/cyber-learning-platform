@@ -3,11 +3,12 @@ jest.mock('../prisma/prisma.service', () => ({
   PrismaService: class PrismaService {},
 }));
 
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { PrismaService } from '../prisma/prisma.service';
 import { InstructorService } from './instructor.service';
 
 function makeService(opts: {
+  ownsClassroom?: boolean;
   course?: { scope?: string; visibleLessons?: number };
   role?: string;
   lesson?: { visible: boolean; published: boolean };
@@ -21,8 +22,13 @@ function makeService(opts: {
         _count: { lessons: opts.course?.visibleLessons ?? 2 },
       }),
       update: jest.fn().mockResolvedValue({}),
+      create: jest.fn().mockResolvedValue({ id: 8, slug: 'new-course' }),
+      findUnique: jest.fn().mockResolvedValue(null),
     },
     user: { findUnique: jest.fn().mockResolvedValue({ role: opts.role ?? 'INSTRUCTOR' }) },
+    classroom: {
+      findFirst: jest.fn().mockResolvedValue(opts.ownsClassroom === false ? null : { id: 3 }),
+    },
     lesson: {
       findFirst: jest.fn().mockResolvedValue({
         id: 5,
@@ -111,5 +117,40 @@ describe('InstructorService.createLesson', () => {
     prisma.lesson.findFirst.mockResolvedValueOnce({ position: 2 });
     await service.createLesson(1, 7, { title: 'Intro', content: 'Hello' });
     expect(prisma.lesson.create.mock.calls[0][0].data).toMatchObject({ position: 3, visible: true });
+  });
+});
+
+describe('InstructorService.updateCourse: classroom courses', () => {
+  it('never moves a classroom course to the public library, even for an admin', async () => {
+    const { service, prisma } = makeService({ role: 'ADMIN', course: { scope: 'CLASSROOM' } });
+    await expect(service.updateCourse(1, 7, { scope: 'PUBLIC' })).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.course.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('InstructorService.createCourse', () => {
+  const dto = { title: 'Intro to SOC work', summary: 'What a SOC analyst does all day.', level: 'BEGINNER' } as const;
+
+  it('creates a classroom course inside a classroom the instructor runs', async () => {
+    const { service, prisma } = makeService();
+    await service.createCourse(7, { ...dto, classroomId: 3 });
+    expect(prisma.classroom.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 3, ownerId: 7 } }),
+    );
+    expect(prisma.course.create.mock.calls[0][0].data).toMatchObject({ scope: 'CLASSROOM', classroomId: 3 });
+  });
+
+  it("refuses somebody else's classroom", async () => {
+    const { service, prisma } = makeService({ ownsClassroom: false });
+    await expect(service.createCourse(7, { ...dto, classroomId: 99 })).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.course.create).not.toHaveBeenCalled();
+  });
+
+  it('keeps courses without a classroom in the public library as before', async () => {
+    const { service, prisma } = makeService();
+    await service.createCourse(7, dto);
+    const data = prisma.course.create.mock.calls[0][0].data;
+    expect(data.scope).toBeUndefined();
+    expect(data.classroomId).toBeUndefined();
   });
 });

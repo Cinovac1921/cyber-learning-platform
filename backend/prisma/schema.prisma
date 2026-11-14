@@ -14,10 +14,12 @@ enum Role {
   ADMIN
 }
 
-/// Who may browse a course. PUBLIC shows in the public library; TEMPLATE is starter content kept out of students' sight.
+/// Who may browse a course. PUBLIC shows in the public library; TEMPLATE is starter content kept out of
+/// students' sight; CLASSROOM is private to the members of one classroom.
 enum CourseScope {
   PUBLIC
   TEMPLATE
+  CLASSROOM
 }
 
 enum CourseLevel {
@@ -51,6 +53,8 @@ model User {
   attempts     Attempt[]
   challenges   Challenge[]
   challengeSolves ChallengeSolve[]
+  classrooms   Classroom[]
+  memberships  ClassroomMember[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -65,6 +69,9 @@ model Course {
   level     CourseLevel @default(BEGINNER)
   published Boolean     @default(false)
   scope     CourseScope @default(PUBLIC)
+  /// Only set for CLASSROOM courses.
+  classroom   Classroom?  @relation(fields: [classroomId], references: [id], onDelete: Restrict)
+  classroomId Int?
   author    User        @relation(fields: [authorId], references: [id])
   authorId  Int
   lessons   Lesson[]
@@ -73,7 +80,41 @@ model Course {
   updatedAt DateTime    @updatedAt
 
   @@index([authorId])
+  @@index([classroomId])
   @@map("courses")
+}
+
+/// A group of students run by one instructor. Its courses are private to its members.
+model Classroom {
+  id          Int      @id @default(autoincrement())
+  owner       User     @relation(fields: [ownerId], references: [id])
+  ownerId     Int
+  name        String   @db.VarChar(120)
+  description String   @default("") @db.VarChar(300)
+  /// The random code students type to join, stored without the dash.
+  joinCode    String   @unique @db.VarChar(16)
+  /// The instructor can close joining without removing anyone.
+  joinOpen    Boolean  @default(true)
+  members     ClassroomMember[]
+  courses     Course[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerId])
+  @@map("classrooms")
+}
+
+model ClassroomMember {
+  id          Int       @id @default(autoincrement())
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroomId Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  joinedAt    DateTime  @default(now())
+
+  @@unique([classroomId, userId])
+  @@index([userId])
+  @@map("classroom_members")
 }
 
 model Lesson {

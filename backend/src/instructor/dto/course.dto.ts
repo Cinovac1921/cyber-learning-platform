@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 
 export const COURSE_LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 export type CourseLevelValue = (typeof COURSE_LEVELS)[number];
@@ -19,6 +19,12 @@ export class CreateCourseDto {
 
   @IsIn(COURSE_LEVELS)
   level!: CourseLevelValue;
+
+  /** Put the new course inside one of the instructor's classrooms. Leave out for the public library. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  classroomId?: number;
 }
 
 export class UpdateCourseDto {

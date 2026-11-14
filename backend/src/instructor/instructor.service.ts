@@ -37,6 +37,7 @@ export class InstructorService {
         level: true,
         published: true,
         scope: true,
+        classroom: { select: { name: true } },
         updatedAt: true,
         _count: { select: { lessons: true } },
       },
@@ -53,8 +54,19 @@ export class InstructorService {
     const summary = clean(dto.summary, 'Summary');
     const slug = await this.uniqueSlug(slugify(title));
 
+    // A course made for a classroom belongs to it from the start and stays private to it.
+    const classroomId =
+      dto.classroomId === undefined ? null : await this.ownClassroomId(dto.classroomId, userId);
+
     return this.prisma.course.create({
-      data: { title, slug, summary, level: dto.level, authorId: userId },
+      data: {
+        title,
+        slug,
+        summary,
+        level: dto.level,
+        authorId: userId,
+        ...(classroomId === null ? {} : { scope: 'CLASSROOM' as const, classroomId }),
+      },
       select: { id: true, slug: true },
     });
   }
@@ -71,6 +83,7 @@ export class InstructorService {
         level: true,
         published: true,
         scope: true,
+        classroom: { select: { id: true, name: true } },
         lessons: {
           orderBy: { position: 'asc' },
           select: { id: true, position: true, title: true, content: true, visible: true },
@@ -104,6 +117,12 @@ export class InstructorService {
       data.published = dto.published;
     }
     if (dto.scope !== undefined && dto.scope !== course.scope) {
+      if (course.scope === 'CLASSROOM') {
+        // Moving it out would make the classroom's lessons and graded quizzes public.
+        throw new BadRequestException(
+          "A classroom course stays inside its classroom. It can't move to the public library or the templates.",
+        );
+      }
       await this.assertAdmin(userId);
       data.scope = dto.scope;
     }
@@ -251,6 +270,18 @@ export class InstructorService {
       throw new NotFoundException('Lesson not found.');
     }
     return lesson;
+  }
+
+  /** A classroom that exists and belongs to this instructor, or a 404. */
+  private async ownClassroomId(classroomId: number, userId: number): Promise<number> {
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, ownerId: userId },
+      select: { id: true },
+    });
+    if (!classroom) {
+      throw new NotFoundException('Classroom not found.');
+    }
+    return classroom.id;
   }
 
   /** Reads the role from the database (not the token), so a demoted admin is stopped at once. */

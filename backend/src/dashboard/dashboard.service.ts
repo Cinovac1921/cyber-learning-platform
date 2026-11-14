@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PUBLIC_COURSE, VISIBLE_LESSON } from '../courses/visibility';
+import { courseVisibleTo, PUBLIC_COURSE, VISIBLE_LESSON } from '../courses/visibility';
 import { PrismaService } from '../prisma/prisma.service';
 import { startOfWeek, weekdayIndex } from './week';
 
@@ -16,7 +16,7 @@ export class DashboardService {
     const offset = Math.max(-840, Math.min(720, tzOffsetMinutes));
 
     const progress = await this.prisma.lessonProgress.findMany({
-      where: { userId, lesson: { ...VISIBLE_LESSON, course: PUBLIC_COURSE } },
+      where: { userId, lesson: { ...VISIBLE_LESSON, course: courseVisibleTo(userId) } },
       select: {
         lessonId: true,
         completedAt: true,
@@ -31,7 +31,7 @@ export class DashboardService {
       courseIds.length === 0
         ? []
         : await this.prisma.course.findMany({
-            where: { id: { in: courseIds }, ...PUBLIC_COURSE },
+            where: { id: { in: courseIds }, ...courseVisibleTo(userId) },
             orderBy: { createdAt: 'asc' },
             select: {
               id: true,

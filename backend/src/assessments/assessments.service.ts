@@ -2,10 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitAttemptDto } from './dto/submit-attempt.dto';
 import { gradeAttempt } from './grading';
-import { PUBLIC_COURSE } from '../courses/visibility';
+import type { Prisma } from '../generated/prisma/client';
+import { courseVisibleTo } from '../courses/visibility';
 
-/** Only assessments a student may see: published, inside a public, published course. */
-const VISIBLE = { published: true, course: PUBLIC_COURSE } as const;
+/** Only assessments this student may see: published, inside a course they can open. */
+function visibleTo(userId: number): Prisma.AssessmentWhereInput {
+  return { published: true, course: courseVisibleTo(userId) };
+}
 
 @Injectable()
 export class AssessmentsService {
@@ -15,7 +18,7 @@ export class AssessmentsService {
   async list(userId: number) {
     const [assessments, attempts] = await Promise.all([
       this.prisma.assessment.findMany({
-        where: { ...VISIBLE, questions: { some: {} } },
+        where: { ...visibleTo(userId), questions: { some: {} } },
         orderBy: { createdAt: 'asc' },
         select: {
           id: true,
@@ -27,7 +30,7 @@ export class AssessmentsService {
         },
       }),
       this.prisma.attempt.findMany({
-        where: { userId, assessment: VISIBLE },
+        where: { userId, assessment: visibleTo(userId) },
         select: { assessmentId: true, percent: true, passed: true },
       }),
     ]);
@@ -54,7 +57,7 @@ export class AssessmentsService {
   /** The quiz to take. The options never say which one is correct. */
   async findOne(assessmentId: number, userId: number) {
     const assessment = await this.prisma.assessment.findFirst({
-      where: { id: assessmentId, ...VISIBLE },
+      where: { id: assessmentId, ...visibleTo(userId) },
       select: {
         id: true,
         title: true,
@@ -89,7 +92,7 @@ export class AssessmentsService {
   /** Grades the answers on the server, saves the attempt and returns the full result. */
   async submit(assessmentId: number, userId: number, dto: SubmitAttemptDto) {
     const assessment = await this.prisma.assessment.findFirst({
-      where: { id: assessmentId, ...VISIBLE },
+      where: { id: assessmentId, ...visibleTo(userId) },
       select: {
         id: true,
         passPercent: true,

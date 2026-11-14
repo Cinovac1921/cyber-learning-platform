@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { listMyCourses } from '../../api/instructor'
+import { listMyClassrooms } from '../../api/instructor-classrooms'
 import { useResource } from '../../app/useResource'
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -8,6 +9,7 @@ import { levelLabel } from '../courses/levels'
 
 export function InstructorPage() {
   const courses = useResource('instructor-courses', (signal) => listMyCourses(signal))
+  const classrooms = useResource('instructor-classrooms', (signal) => listMyClassrooms(signal))
 
   return (
     <>
@@ -25,6 +27,46 @@ export function InstructorPage() {
           </>
         }
       />
+
+      <section className="classrooms" aria-labelledby="my-classrooms-title">
+        <div className="editor__heading">
+          <h2 id="my-classrooms-title">Classrooms</h2>
+          <Link to="/instructor/classrooms/new" className="button button--small">
+            + New classroom
+          </Link>
+        </div>
+        {classrooms.status === 'error' && <ErrorNotice error={classrooms.error} />}
+        {classrooms.status === 'ready' && classrooms.data.length === 0 && (
+          <p className="loading">
+            No classrooms yet. A classroom gets a join code, and its courses stay private to its students.
+          </p>
+        )}
+        {classrooms.status === 'ready' && classrooms.data.length > 0 && (
+          <div className="course-grid">
+            {classrooms.data.map((classroom) => (
+              <article key={classroom.id} className="course-card">
+                <div className="toolbar">
+                  <span className={classroom.joinOpen ? 'chip chip--live' : 'chip'}>
+                    {classroom.joinOpen ? 'Joining open' : 'Joining closed'}
+                  </span>
+                </div>
+                <h3>{classroom.name}</h3>
+                <p className="course-card__meta">
+                  {classroom.memberCount} {classroom.memberCount === 1 ? 'student' : 'students'} ·{' '}
+                  {classroom.courseCount} {classroom.courseCount === 1 ? 'course' : 'courses'}
+                </p>
+                <Link to={`/instructor/classrooms/${classroom.id}`} className="button button--block">
+                  Manage classroom
+                </Link>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <div className="editor__heading classrooms">
+        <h2>Courses</h2>
+      </div>
 
       {courses.status === 'loading' && (
         <p className="loading" role="status">
@@ -57,6 +99,9 @@ export function InstructorPage() {
                 </span>
                 <span className="chip">{levelLabel(course.level)}</span>
                 {course.scope === 'TEMPLATE' && <span className="chip">Template</span>}
+                {course.scope === 'CLASSROOM' && course.classroom && (
+                  <span className="chip">{course.classroom.name}</span>
+                )}
               </div>
               <h3>{course.title}</h3>
               <p className="course-card__summary">{course.summary}</p>

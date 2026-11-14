@@ -2381,3 +2381,57 @@ a {
 .form label.form__check .form__hint {
   grid-column: 2;
 }
+
+/* Classrooms */
+.classrooms {
+  margin-top: 2.5rem;
+}
+
+.join-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.join-form input {
+  flex: 1 1 14rem;
+  max-width: 22rem;
+  height: 2.75rem;
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.join-form input::placeholder {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.join-form input:focus {
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 28%, transparent);
+}
+
+.join-code {
+  margin: 0.75rem 0;
+}
+
+.join-code code {
+  display: inline-block;
+  padding: 0.6rem 1.25rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  background: var(--hover);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  user-select: all;
+}

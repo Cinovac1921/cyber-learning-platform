@@ -6,7 +6,7 @@ jest.mock('../prisma/prisma.service', () => ({
 import { NotFoundException } from '@nestjs/common';
 import type { PrismaService } from '../prisma/prisma.service';
 import { CoursesService } from './courses.service';
-import { PUBLIC_COURSE, VISIBLE_LESSON } from './visibility';
+import { courseVisibleTo, PUBLIC_COURSE, VISIBLE_LESSON } from './visibility';
 
 type Where = { position?: { lt?: number; gt?: number } };
 
@@ -62,12 +62,12 @@ describe('CoursesService.list', () => {
 });
 
 describe('CoursesService.findBySlug', () => {
-  it('asks only for public courses and visible lessons', async () => {
+  it('asks only for courses this student may open, and visible lessons', async () => {
     const { service, prisma } = makeService({ course: null });
     await expect(service.findBySlug('web', 7)).rejects.toBeInstanceOf(NotFoundException);
 
     const query = prisma.course.findFirst.mock.calls[0][0];
-    expect(query.where).toEqual({ slug: 'web', ...PUBLIC_COURSE });
+    expect(query.where).toEqual({ slug: 'web', ...courseVisibleTo(7) });
     expect(query.select.lessons.where).toEqual(VISIBLE_LESSON);
   });
 
@@ -118,7 +118,7 @@ describe('CoursesService.findLesson', () => {
     expect(query.where).toEqual({
       position: 2,
       ...VISIBLE_LESSON,
-      course: { slug: 'web', ...PUBLIC_COURSE },
+      course: { slug: 'web', ...courseVisibleTo(7) },
     });
   });
 

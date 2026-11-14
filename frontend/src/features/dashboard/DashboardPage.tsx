@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { EmptyState } from '../../components/EmptyState'
 import { PageHeader } from '../../components/PageHeader'
 import { CourseCard } from './CourseCard'
+import { MyClassrooms } from '../classrooms/MyClassrooms'
 import { LibrarySection } from './LibrarySection'
 import { useDashboard } from './useDashboard'
 
@@ -68,6 +69,7 @@ export function DashboardPage() {
         >
           Pick a course and your progress will show up here.
         </EmptyState>
+        <MyClassrooms />
         <LibrarySection courses={library} />
       </>
     )
@@ -133,6 +135,7 @@ export function DashboardPage() {
         </aside>
       </div>
 
+      <MyClassrooms />
       <LibrarySection courses={library} />
     </>
   )
