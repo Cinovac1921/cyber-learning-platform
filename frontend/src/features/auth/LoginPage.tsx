@@ -46,6 +46,9 @@ export function LoginPage() {
         <label>
           Password
           <input type="password" name="password" autoComplete="current-password" required />
+          <span className="form__hint">
+            <Link to="/forgot-password">Forgot your password?</Link>
+          </span>
         </label>
         {error && (
           <p className="notice notice--error" role="alert">

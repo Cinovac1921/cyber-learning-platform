@@ -4,9 +4,11 @@ import { AssessmentPage } from '../features/assessments/AssessmentPage'
 import { AssessmentResultPage } from '../features/assessments/AssessmentResultPage'
 import { AssessmentsPage } from '../features/assessments/AssessmentsPage'
 import { ClassroomPage } from '../features/classrooms/ClassroomPage'
+import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { RegisterPage } from '../features/auth/RegisterPage'
 import { RequireAuth } from '../features/auth/RequireAuth'
+import { ResetPasswordPage } from '../features/auth/ResetPasswordPage'
 import { ChallengePage } from '../features/challenges/ChallengePage'
 import { ChallengesPage } from '../features/challenges/ChallengesPage'
 import { LeaderboardPage } from '../features/challenges/LeaderboardPage'
@@ -37,6 +39,8 @@ export const router = createBrowserRouter([
     children: [
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password', element: <ResetPasswordPage /> },
     ],
   },
   {

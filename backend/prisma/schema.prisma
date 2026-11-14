@@ -55,6 +55,7 @@ model User {
   challengeSolves ChallengeSolve[]
   classrooms   Classroom[]
   memberships  ClassroomMember[]
+  passwordResetTokens PasswordResetToken[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -82,6 +83,20 @@ model Course {
   @@index([authorId])
   @@index([classroomId])
   @@map("courses")
+}
+
+/// A one-time link that lets someone choose a new password. Only a hash of the token is stored,
+/// so a leaked database can't be used to reset anyone's password.
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  tokenHash String   @unique @db.VarChar(64)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 /// A group of students run by one instructor. Its courses are private to its members.

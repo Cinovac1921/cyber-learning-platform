@@ -12,3 +12,12 @@ export function loginAccount(input: LoginInput) {
 export function getCurrentUser(signal?: AbortSignal) {
   return api.get<User>('/auth/me', { signal })
 }
+
+/** Asks for a reset link. The answer is the same whether or not an account uses the email. */
+export function requestPasswordReset(email: string) {
+  return api.post<{ message: string }>('/auth/forgot-password', { email })
+}
+
+export function resetPassword(token: string, password: string) {
+  return api.post<{ message: string }>('/auth/reset-password', { token, password })
+}

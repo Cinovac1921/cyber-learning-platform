@@ -10,8 +10,11 @@ import {
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import type { AuthenticatedRequest } from './auth.types';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RESET_REQUESTED_MESSAGE } from './password-reset';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
@@ -30,6 +33,22 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  /** Always answers the same way, and answers before the email work is done, so it can't be timed. */
+  @Post('forgot-password')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    void this.auth.requestPasswordReset(dto.email);
+    return { message: RESET_REQUESTED_MESSAGE };
+  }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.auth.resetPassword(dto.token, dto.password);
   }
 
   @Get('me')

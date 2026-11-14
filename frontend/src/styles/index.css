@@ -2435,3 +2435,15 @@ a {
   letter-spacing: 0.18em;
   user-select: all;
 }
+
+/* A button that reads like a link, for small inline actions */
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
