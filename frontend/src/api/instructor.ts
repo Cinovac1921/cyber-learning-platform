@@ -1,6 +1,7 @@
 import type {
   AssessmentInput,
   CourseInput,
+  CourseScope,
   InstructorAssessment,
   InstructorAssessmentSummary,
   InstructorCourse,
@@ -24,7 +25,7 @@ export function createCourse(input: CourseInput) {
   return api.post<{ id: number; slug: string }>('/instructor/courses', input)
 }
 
-export function updateCourse(id: number, changes: Partial<CourseInput> & { published?: boolean }) {
+export function updateCourse(id: number, changes: Partial<CourseInput> & { published?: boolean; scope?: CourseScope }) {
   return api.patch<Ok>(`/instructor/courses/${id}`, changes)
 }
 

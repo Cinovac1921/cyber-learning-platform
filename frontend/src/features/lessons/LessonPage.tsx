@@ -90,7 +90,7 @@ export function LessonPage() {
       <article className="lesson-focus">
         <div className="lesson-focus__top">
           <span>
-            {course.data.title} · Lesson {lesson.data.position} of {lessons.length}
+            {course.data.title} · Lesson {lesson.data.number} of {lessons.length}
           </span>
           <button type="button" className="button button--quiet button--small" onClick={() => setFocus(false)}>
             Exit focus mode
@@ -103,7 +103,7 @@ export function LessonPage() {
             <li key={item.id}>
               <Link
                 to={`${courseHref}/lessons/${item.position}`}
-                aria-label={`Lesson ${item.position}: ${item.title}${item.completed ? ' (completed)' : ''}`}
+                aria-label={`Lesson ${item.number}: ${item.title}${item.completed ? ' (completed)' : ''}`}
                 aria-current={item.position === lesson.data.position ? 'page' : undefined}
                 className={
                   item.position === lesson.data.position ? 'is-current' : item.completed ? 'is-done' : undefined
@@ -138,7 +138,7 @@ export function LessonPage() {
         <header className="lesson__header">
           <div>
             <span className="chip">
-              Lesson {lesson.data.position} of {lessons.length}
+              Lesson {lesson.data.number} of {lessons.length}
             </span>
             <h1>{title}</h1>
           </div>

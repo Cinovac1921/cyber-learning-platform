@@ -29,7 +29,7 @@ export function CourseCard({ course, colorIndex }: { course: CourseProgress; col
       </div>
       <span className="chip">{describeProgress(percent)}</span>
       {next ? (
-        <Link to={`/courses/${course.slug}/lessons/${next.number}`} className="button button--block">
+        <Link to={`/courses/${course.slug}/lessons/${next.position}`} className="button button--block">
           Continue · Lesson {next.number}
         </Link>
       ) : (

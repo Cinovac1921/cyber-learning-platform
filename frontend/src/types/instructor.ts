@@ -1,5 +1,8 @@
 import type { CourseLevel } from './learning'
 
+/** PUBLIC shows in the public library. TEMPLATE is starter content students never see. */
+export type CourseScope = 'PUBLIC' | 'TEMPLATE'
+
 export interface InstructorCourseSummary {
   id: number
   title: string
@@ -7,6 +10,7 @@ export interface InstructorCourseSummary {
   summary: string
   level: CourseLevel
   published: boolean
+  scope: CourseScope
   updatedAt: string
   lessonCount: number
 }
@@ -16,6 +20,7 @@ export interface InstructorLesson {
   position: number
   title: string
   content: string
+  visible: boolean
 }
 
 export interface InstructorCourse {
@@ -25,6 +30,7 @@ export interface InstructorCourse {
   summary: string
   level: CourseLevel
   published: boolean
+  scope: CourseScope
   lessons: InstructorLesson[]
 }
 
@@ -37,6 +43,7 @@ export interface CourseInput {
 export interface LessonInput {
   title: string
   content: string
+  visible?: boolean
 }
 export interface InstructorAssessmentSummary {
   id: number

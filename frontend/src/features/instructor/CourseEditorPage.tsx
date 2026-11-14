@@ -8,17 +8,21 @@ import {
   listCourseAssessments,
   moveLesson,
   updateCourse,
+  updateLesson,
 } from '../../api/instructor'
 import { useReloadableResource } from '../../app/useResource'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import type { CourseInput } from '../../types/instructor'
+import { useAuth } from '../auth/useAuth'
 import { CourseForm } from './CourseForm'
+import { ScopeControl } from './ScopeControl'
 
 export function CourseEditorPage() {
   const { id = '' } = useParams()
   const courseId = Number(id)
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [actionError, setActionError] = useState<string | null>(null)
 
   const { resource: course, reload } = useReloadableResource(`instructor-course:${id}`, (signal) =>
@@ -58,7 +62,7 @@ export function CourseEditorPage() {
     return <ErrorNotice error={course.error} />
   }
 
-  const { title, slug, summary, level, published, lessons } = course.data
+  const { title, slug, summary, level, published, scope, lessons } = course.data
   const details: CourseInput = { title, summary, level }
 
   async function saveDetails(values: CourseInput) {
@@ -106,10 +110,13 @@ export function CourseEditorPage() {
         />
         <p className="toolbar">
           <span className={published ? 'chip chip--live' : 'chip'}>{published ? 'Published' : 'Draft'}</span>
+          {scope === 'TEMPLATE' && <span className="chip">Template</span>}
           <span className="course-card__meta">
-            {published
-              ? 'Students can see this course.'
-              : 'Only you can see this course. Add lessons, then publish.'}
+            {scope === 'TEMPLATE'
+              ? 'This is a template. Students never see it, whether or not it is published.'
+              : published
+                ? 'Students can see this course.'
+                : 'Only you can see this course. Add lessons, then publish.'}
           </span>
         </p>
       </div>
@@ -124,6 +131,13 @@ export function CourseEditorPage() {
         <h2>Details</h2>
         <CourseForm initial={details} submitLabel="Save details" onSubmit={saveDetails} />
       </section>
+
+      {user?.role === 'ADMIN' && (
+        <section className="editor__section">
+          <h2>Visibility</h2>
+          <ScopeControl scope={scope} onSave={(next) => run(() => updateCourse(courseId, { scope: next }))} />
+        </section>
+      )}
 
       <section className="editor__section">
         <div className="editor__heading">
@@ -143,6 +157,7 @@ export function CourseEditorPage() {
                   {lesson.position}
                 </span>
                 <span className="lesson-row__title">{lesson.title}</span>
+                {!lesson.visible && <span className="chip">Hidden</span>}
                 <span className="row-actions">
                   <button
                     type="button"
@@ -161,6 +176,14 @@ export function CourseEditorPage() {
                     onClick={() => void run(() => moveLesson(lesson.id, 'down'))}
                   >
                     ↓
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--quiet button--small"
+                    aria-label={`${lesson.visible ? 'Hide' : 'Show'} "${lesson.title}" ${lesson.visible ? 'from' : 'to'} students`}
+                    onClick={() => void run(() => updateLesson(lesson.id, { visible: !lesson.visible }))}
+                  >
+                    {lesson.visible ? 'Hide' : 'Show'}
                   </button>
                   <Link
                     to={`/instructor/courses/${courseId}/lessons/${lesson.id}`}

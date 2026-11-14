@@ -53,7 +53,7 @@ export function CoursePage() {
     completedLessons === 0
       ? 'Start course'
       : next
-        ? `Continue · Lesson ${next.position}`
+        ? `Continue · Lesson ${next.number}`
         : 'Review course'
 
   return (
@@ -87,7 +87,7 @@ export function CoursePage() {
                       <LessonIcon size={34} />
                     </span>
                     <span className="timeline__text">
-                      <span className="timeline__eyebrow">Lesson {lesson.position}</span>
+                      <span className="timeline__eyebrow">Lesson {lesson.number}</span>
                       <span className="timeline__title">{lesson.title}</span>
                       <span className="timeline__status">
                         {state === 'done' && <CheckCircleIcon size={20} style={{ color: 'var(--ok)' }} />}

@@ -44,6 +44,7 @@ export function LessonEditorPage() {
     const values = {
       title: String(data.get('title')).trim(),
       content: String(data.get('content')).trim(),
+      visible: data.get('visible') === 'on',
     }
     setError(null)
     setSaving(true)
@@ -92,6 +93,11 @@ export function LessonEditorPage() {
           <span className="form__hint">
             Leave a blank line between paragraphs. Put commands in `backticks` to show them as code.
           </span>
+        </label>
+        <label className="form__check">
+          <input type="checkbox" name="visible" defaultChecked={lesson?.visible ?? true} />
+          Visible to students
+          <span className="form__hint">Untick to keep this lesson as a draft. You can show it later.</span>
         </label>
         {error && (
           <p className="notice notice--error" role="alert">

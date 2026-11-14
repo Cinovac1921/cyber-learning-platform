@@ -14,6 +14,12 @@ enum Role {
   ADMIN
 }
 
+/// Who may browse a course. PUBLIC shows in the public library; TEMPLATE is starter content kept out of students' sight.
+enum CourseScope {
+  PUBLIC
+  TEMPLATE
+}
+
 enum CourseLevel {
   BEGINNER
   INTERMEDIATE
@@ -58,6 +64,7 @@ model Course {
   summary   String      @db.VarChar(300)
   level     CourseLevel @default(BEGINNER)
   published Boolean     @default(false)
+  scope     CourseScope @default(PUBLIC)
   author    User        @relation(fields: [authorId], references: [id])
   authorId  Int
   lessons   Lesson[]
@@ -76,6 +83,8 @@ model Lesson {
   position  Int
   title     String   @db.VarChar(160)
   content   String   @db.Text
+  /// Hidden lessons are invisible to students but still editable by the instructor.
+  visible   Boolean  @default(true)
   progress  LessonProgress[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

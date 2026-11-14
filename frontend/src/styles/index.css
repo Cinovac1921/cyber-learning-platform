@@ -2356,3 +2356,28 @@ a {
 .admin-table .notice {
   margin-top: 0.5rem;
 }
+
+/* Public library on the dashboard */
+.library {
+  margin-top: 2.5rem;
+}
+
+/* A checkbox row inside a form */
+.form label.form__check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 0.65rem;
+  row-gap: 0.25rem;
+}
+
+.form label.form__check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.form label.form__check .form__hint {
+  grid-column: 2;
+}

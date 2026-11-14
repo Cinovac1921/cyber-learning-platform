@@ -56,6 +56,7 @@ export function InstructorPage() {
                   {course.published ? 'Published' : 'Draft'}
                 </span>
                 <span className="chip">{levelLabel(course.level)}</span>
+                {course.scope === 'TEMPLATE' && <span className="chip">Template</span>}
               </div>
               <h3>{course.title}</h3>
               <p className="course-card__summary">{course.summary}</p>

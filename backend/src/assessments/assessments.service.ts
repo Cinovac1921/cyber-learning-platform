@@ -2,9 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitAttemptDto } from './dto/submit-attempt.dto';
 import { gradeAttempt } from './grading';
+import { PUBLIC_COURSE } from '../courses/visibility';
 
-/** Only assessments a student may see: published, inside a published course. */
-const VISIBLE = { published: true, course: { published: true } } as const;
+/** Only assessments a student may see: published, inside a public, published course. */
+const VISIBLE = { published: true, course: PUBLIC_COURSE } as const;
 
 @Injectable()
 export class AssessmentsService {

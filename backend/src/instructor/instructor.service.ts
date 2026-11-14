@@ -1,6 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto';
+import { CreateCourseDto, type CourseScopeValue, UpdateCourseDto } from './dto/course.dto';
 import { CreateLessonDto, UpdateLessonDto } from './dto/lesson.dto';
 import { slugify } from './slug';
 
@@ -31,6 +36,7 @@ export class InstructorService {
         summary: true,
         level: true,
         published: true,
+        scope: true,
         updatedAt: true,
         _count: { select: { lessons: true } },
       },
@@ -64,9 +70,10 @@ export class InstructorService {
         summary: true,
         level: true,
         published: true,
+        scope: true,
         lessons: {
           orderBy: { position: 'asc' },
-          select: { id: true, position: true, title: true, content: true },
+          select: { id: true, position: true, title: true, content: true, visible: true },
         },
       },
     });
@@ -85,15 +92,20 @@ export class InstructorService {
       summary?: string;
       level?: UpdateCourseDto['level'];
       published?: boolean;
+      scope?: CourseScopeValue;
     } = {};
     if (dto.title !== undefined) data.title = clean(dto.title, 'Title');
     if (dto.summary !== undefined) data.summary = clean(dto.summary, 'Summary');
     if (dto.level !== undefined) data.level = dto.level;
     if (dto.published !== undefined) {
       if (dto.published && course._count.lessons === 0) {
-        throw new BadRequestException('Add at least one lesson before publishing.');
+        throw new BadRequestException('Add at least one visible lesson before publishing.');
       }
       data.published = dto.published;
+    }
+    if (dto.scope !== undefined && dto.scope !== course.scope) {
+      await this.assertAdmin(userId);
+      data.scope = dto.scope;
     }
 
     await this.prisma.course.update({ where: { id: courseId }, data });
@@ -125,17 +137,32 @@ export class InstructorService {
         position: (last?.position ?? 0) + 1,
         title: clean(dto.title, 'Title'),
         content: clean(dto.content, 'Lesson text'),
+        visible: dto.visible ?? true,
       },
       select: { id: true, position: true },
     });
   }
 
   async updateLesson(lessonId: number, userId: number, dto: UpdateLessonDto) {
-    await this.ownLesson(lessonId, userId);
+    const lesson = await this.ownLesson(lessonId, userId);
 
-    const data: { title?: string; content?: string } = {};
+    const data: { title?: string; content?: string; visible?: boolean } = {};
     if (dto.title !== undefined) data.title = clean(dto.title, 'Title');
     if (dto.content !== undefined) data.content = clean(dto.content, 'Lesson text');
+    if (dto.visible !== undefined) {
+      if (!dto.visible && lesson.visible && lesson.course.published) {
+        // A published course must keep something for students to read.
+        const otherVisible = await this.prisma.lesson.count({
+          where: { courseId: lesson.courseId, visible: true, id: { not: lessonId } },
+        });
+        if (otherVisible === 0) {
+          throw new BadRequestException(
+            'A published course needs at least one visible lesson. Keep another lesson visible, or unpublish the course first.',
+          );
+        }
+      }
+      data.visible = dto.visible;
+    }
 
     await this.prisma.lesson.update({ where: { id: lessonId }, data });
     return { ok: true };
@@ -196,7 +223,12 @@ export class InstructorService {
   private async ownCourse(courseId: number, userId: number) {
     const course = await this.prisma.course.findFirst({
       where: { id: courseId, authorId: userId },
-      select: { id: true, _count: { select: { lessons: true } } },
+      // `lessons` counts only visible lessons: that is what publishing depends on.
+      select: {
+        id: true,
+        scope: true,
+        _count: { select: { lessons: { where: { visible: true } } } },
+      },
     });
     if (!course) {
       throw new NotFoundException('Course not found.');
@@ -207,12 +239,29 @@ export class InstructorService {
   private async ownLesson(lessonId: number, userId: number) {
     const lesson = await this.prisma.lesson.findFirst({
       where: { id: lessonId, course: { authorId: userId } },
-      select: { id: true, courseId: true, position: true },
+      select: {
+        id: true,
+        courseId: true,
+        position: true,
+        visible: true,
+        course: { select: { published: true } },
+      },
     });
     if (!lesson) {
       throw new NotFoundException('Lesson not found.');
     }
     return lesson;
+  }
+
+  /** Reads the role from the database (not the token), so a demoted admin is stopped at once. */
+  private async assertAdmin(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (user?.role !== 'ADMIN') {
+      throw new ForbiddenException("Only admins can change where a course appears.");
+    }
   }
 
   private async uniqueSlug(base: string): Promise<string> {

@@ -1,15 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PUBLIC_COURSE, VISIBLE_LESSON } from './visibility';
 
 @Injectable()
 export class CoursesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Published courses with lesson counts and how many the user finished. */
+  /** Public courses with visible-lesson counts and how many the user finished. */
   async list(userId: number) {
     const [courses, progress] = await Promise.all([
       this.prisma.course.findMany({
-        where: { published: true },
+        where: PUBLIC_COURSE,
         orderBy: { createdAt: 'asc' },
         select: {
           id: true,
@@ -17,11 +18,11 @@ export class CoursesService {
           slug: true,
           summary: true,
           level: true,
-          _count: { select: { lessons: true } },
+          _count: { select: { lessons: { where: VISIBLE_LESSON } } },
         },
       }),
       this.prisma.lessonProgress.findMany({
-        where: { userId, lesson: { course: { published: true } } },
+        where: { userId, lesson: { ...VISIBLE_LESSON, course: PUBLIC_COURSE } },
         select: { lesson: { select: { courseId: true } } },
       }),
     ]);
@@ -41,7 +42,7 @@ export class CoursesService {
   /** One course with its lessons and which of them the user finished. */
   async findBySlug(slug: string, userId: number) {
     const course = await this.prisma.course.findFirst({
-      where: { slug, published: true },
+      where: { slug, ...PUBLIC_COURSE },
       select: {
         id: true,
         title: true,
@@ -49,6 +50,7 @@ export class CoursesService {
         summary: true,
         level: true,
         lessons: {
+          where: VISIBLE_LESSON,
           orderBy: { position: 'asc' },
           select: { id: true, position: true, title: true },
         },
@@ -60,7 +62,7 @@ export class CoursesService {
     }
 
     const done = await this.prisma.lessonProgress.findMany({
-      where: { userId, lesson: { courseId: course.id } },
+      where: { userId, lesson: { courseId: course.id, ...VISIBLE_LESSON } },
       select: { lessonId: true },
     });
     const doneIds = new Set(done.map((entry) => entry.lessonId));
@@ -68,8 +70,11 @@ export class CoursesService {
     return {
       ...course,
       completedLessons: doneIds.size,
-      lessons: course.lessons.map((lesson) => ({
+      // `position` is the lesson's place in the course (and its URL); `number` counts only
+      // the lessons students can see, so hiding one never leaves a gap in what they read.
+      lessons: course.lessons.map((lesson, index) => ({
         ...lesson,
+        number: index + 1,
         completed: doneIds.has(lesson.id),
       })),
     };
@@ -78,7 +83,7 @@ export class CoursesService {
   /** One lesson with its text, neighbours and whether the user finished it. */
   async findLesson(slug: string, position: number, userId: number) {
     const lesson = await this.prisma.lesson.findFirst({
-      where: { position, course: { slug, published: true } },
+      where: { position, ...VISIBLE_LESSON, course: { slug, ...PUBLIC_COURSE } },
       select: {
         id: true,
         courseId: true,
@@ -93,16 +98,19 @@ export class CoursesService {
       throw new NotFoundException('Lesson not found.');
     }
 
-    const [previous, next, progress] = await Promise.all([
+    const [previous, next, before, progress] = await Promise.all([
       this.prisma.lesson.findFirst({
-        where: { courseId: lesson.courseId, position: { lt: position } },
+        where: { courseId: lesson.courseId, ...VISIBLE_LESSON, position: { lt: position } },
         orderBy: { position: 'desc' },
         select: { position: true },
       }),
       this.prisma.lesson.findFirst({
-        where: { courseId: lesson.courseId, position: { gt: position } },
+        where: { courseId: lesson.courseId, ...VISIBLE_LESSON, position: { gt: position } },
         orderBy: { position: 'asc' },
         select: { position: true },
+      }),
+      this.prisma.lesson.count({
+        where: { courseId: lesson.courseId, ...VISIBLE_LESSON, position: { lt: position } },
       }),
       this.prisma.lessonProgress.findUnique({
         where: { userId_lessonId: { userId, lessonId: lesson.id } },
@@ -113,6 +121,7 @@ export class CoursesService {
     return {
       id: lesson.id,
       position: lesson.position,
+      number: before + 1,
       title: lesson.title,
       content: lesson.content,
       course: lesson.course,
@@ -125,7 +134,7 @@ export class CoursesService {
   /** Marks a lesson done (or not done) for the user. Safe to repeat. */
   async setLessonCompleted(slug: string, position: number, userId: number, completed: boolean) {
     const lesson = await this.prisma.lesson.findFirst({
-      where: { position, course: { slug, published: true } },
+      where: { position, ...VISIBLE_LESSON, course: { slug, ...PUBLIC_COURSE } },
       select: { id: true },
     });
 

@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { EmptyState } from '../../components/EmptyState'
 import { PageHeader } from '../../components/PageHeader'
 import { CourseCard } from './CourseCard'
+import { LibrarySection } from './LibrarySection'
 import { useDashboard } from './useDashboard'
 
 const WEEK_DAYS = [
@@ -51,7 +52,7 @@ export function DashboardPage() {
     )
   }
 
-  const { courses, weeklyGoal } = state.data
+  const { courses, library, weeklyGoal } = state.data
 
   if (courses.length === 0) {
     return (
@@ -67,6 +68,7 @@ export function DashboardPage() {
         >
           Pick a course and your progress will show up here.
         </EmptyState>
+        <LibrarySection courses={library} />
       </>
     )
   }
@@ -130,6 +132,8 @@ export function DashboardPage() {
           </section>
         </aside>
       </div>
+
+      <LibrarySection courses={library} />
     </>
   )
 }

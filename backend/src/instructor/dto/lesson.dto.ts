@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateLessonDto {
   @IsString()
@@ -10,6 +10,10 @@ export class CreateLessonDto {
   @MinLength(1)
   @MaxLength(20000)
   content!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  visible?: boolean;
 }
 
 export class UpdateLessonDto {
@@ -24,6 +28,10 @@ export class UpdateLessonDto {
   @MinLength(1)
   @MaxLength(20000)
   content?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  visible?: boolean;
 }
 
 export class MoveLessonDto {

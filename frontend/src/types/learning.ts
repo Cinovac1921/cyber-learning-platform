@@ -13,7 +13,10 @@ export interface CourseSummary {
 
 export interface LessonOutline {
   id: number
+  /** Place in the course. It is the lesson's URL, so it can skip a number when a lesson is hidden. */
   position: number
+  /** What the student reads ("Lesson 2"): counts only the lessons they can see. */
+  number: number
   title: string
   completed: boolean
 }
@@ -33,6 +36,7 @@ export interface CourseDetail {
 export interface LessonDetail {
   id: number
   position: number
+  number: number
   title: string
   content: string
   completed: boolean
@@ -43,8 +47,10 @@ export interface LessonDetail {
 
 export interface NextLesson {
   id: number
-  /** Position of the lesson inside its course, starting at 1. */
+  /** What the student reads ("Lesson 2"), counting only visible lessons. */
   number: number
+  /** The lesson's place in the course, used in its URL. */
+  position: number
   title: string
 }
 
@@ -65,7 +71,18 @@ export interface WeeklyGoal {
   activeDays: boolean[]
 }
 
+/** A public course the student has not started yet. */
+export interface LibraryCourse {
+  id: number
+  title: string
+  slug: string
+  summary: string
+  level: CourseLevel
+  lessonCount: number
+}
+
 export interface DashboardData {
   courses: CourseProgress[]
+  library: LibraryCourse[]
   weeklyGoal: WeeklyGoal
 }

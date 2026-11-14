@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `courses` ADD COLUMN `scope` ENUM('PUBLIC', 'TEMPLATE') NOT NULL DEFAULT 'PUBLIC';
+
+-- AlterTable
+ALTER TABLE `lessons` ADD COLUMN `visible` BOOLEAN NOT NULL DEFAULT true;
