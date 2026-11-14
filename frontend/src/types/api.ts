@@ -3,7 +3,7 @@ export interface HealthResponse {
   timestamp: string
 }
 
-export type Role = 'STUDENT' | 'INSTRUCTOR'
+export type Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN'
 
 export interface User {
   id: number

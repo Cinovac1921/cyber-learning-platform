@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router'
+import { AdminUsersPage } from '../features/admin/AdminUsersPage'
 import { AssessmentPage } from '../features/assessments/AssessmentPage'
 import { AssessmentResultPage } from '../features/assessments/AssessmentResultPage'
 import { AssessmentsPage } from '../features/assessments/AssessmentsPage'
@@ -56,7 +57,7 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        element: <RequireAuth role="INSTRUCTOR" />,
+        element: <RequireAuth role={['INSTRUCTOR', 'ADMIN']} />,
         children: [
           { path: 'instructor', element: <InstructorPage /> },
           { path: 'instructor/challenges', element: <InstructorChallengesPage /> },
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
           { path: 'instructor/courses/:id/assessments/new', element: <NewAssessmentPage /> },
           { path: 'instructor/assessments/:assessmentId', element: <AssessmentEditorPage /> },
         ],
+      },
+      {
+        element: <RequireAuth role="ADMIN" />,
+        children: [{ path: 'admin', element: <AdminUsersPage /> }],
       },
       { path: '*', element: <NotFoundPage /> },
     ],

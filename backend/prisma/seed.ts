@@ -290,10 +290,13 @@ const sampleChallenges: SeedChallenge[] = [
 ];
 
 async function main() {
-  const author = await prisma.user.findFirst({ where: { role: 'INSTRUCTOR' } });
+  const author = await prisma.user.findFirst({
+    where: { role: { in: ['INSTRUCTOR', 'ADMIN'] } },
+    orderBy: { id: 'asc' },
+  });
   if (!author) {
     console.error(
-      'No instructor found. Set your account role to INSTRUCTOR in phpMyAdmin, then run the seed again.',
+      'No instructor or admin found. Register, run `npm run role:set -- you@example.com ADMIN`, then run the seed again.',
     );
     process.exitCode = 1;
     return;

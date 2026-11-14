@@ -9,7 +9,7 @@ import type { AuthenticatedRequest } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
- * Lets only instructors through. It checks the database on every request
+ * Lets instructors and admins through. It checks the database on every request
  * (not the role inside the token), so a changed role takes effect immediately.
  * Always use it after JwtAuthGuard.
  */
@@ -30,7 +30,7 @@ export class InstructorGuard implements CanActivate {
       select: { role: true },
     });
 
-    if (user?.role !== 'INSTRUCTOR') {
+    if (user?.role !== 'INSTRUCTOR' && user?.role !== 'ADMIN') {
       throw new ForbiddenException('Instructor access is required.');
     }
     return true;

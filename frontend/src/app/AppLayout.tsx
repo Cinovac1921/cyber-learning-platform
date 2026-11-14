@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { Brand } from '../components/Brand'
 import { ChartIcon, HomeIcon, PlayIcon, TrophyIcon, WrenchIcon } from '../components/Icons'
+import { canTeach, ROLE_LABEL } from '../features/auth/roles'
 import { useAuth } from '../features/auth/useAuth'
 import { ThemeToggle } from './ThemeToggle'
 import { useBackendStatus, type BackendStatus } from './useBackendStatus'
@@ -28,8 +29,11 @@ export function AppLayout() {
     { to: '/courses', label: 'Courses', icon: <PlayIcon size={18} /> },
     { to: '/challenges', label: 'Challenges', icon: <TrophyIcon size={20} /> },
     { to: '/assessments', label: 'Assessments', icon: <ChartIcon size={20} /> },
-    ...(user?.role === 'INSTRUCTOR'
+    ...(canTeach(user?.role)
       ? [{ to: '/instructor', label: 'Instructor', icon: <WrenchIcon size={20} /> }]
+      : []),
+    ...(user?.role === 'ADMIN'
+      ? [{ to: '/admin', label: 'Admin', icon: <WrenchIcon size={20} /> }]
       : []),
   ]
 
@@ -59,7 +63,7 @@ export function AppLayout() {
                 </span>
                 <p className="topbar__user">
                   {user.displayName}
-                  <span>{user.role === 'INSTRUCTOR' ? 'Instructor' : 'Student'}</span>
+                  <span>{ROLE_LABEL[user.role]}</span>
                 </p>
               </div>
               <button type="button" className="button button--quiet button--small" onClick={logout}>
