@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { AuthModule } from './auth/auth.module';
+import { ChallengesModule } from './challenges/challenges.module';
 import { CoursesModule } from './courses/courses.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { HealthModule } from './health/health.module';
@@ -15,6 +16,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuthModule,
     CoursesModule,
     AssessmentsModule,
+    ChallengesModule,
     DashboardModule,
     InstructorModule,
     HealthModule,

@@ -251,6 +251,75 @@ a {
   margin-left: auto;
 }
 
+.topbar__menu,
+.topbar__signout {
+  display: none;
+}
+
+.topbar__signout {
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.topbar__menu {
+  position: relative;
+  flex: none;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--toggle-bg);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.topbar__menu span,
+.topbar__menu span::before,
+.topbar__menu span::after {
+  display: block;
+  width: 1.15rem;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.topbar__menu span {
+  position: relative;
+}
+
+.topbar__menu span::before,
+.topbar__menu span::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.topbar__menu span::before {
+  top: -6px;
+}
+
+.topbar__menu span::after {
+  top: 6px;
+}
+
+.topbar.is-open .topbar__menu span {
+  background: transparent;
+}
+
+.topbar.is-open .topbar__menu span::before {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.topbar.is-open .topbar__menu span::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 .topbar__profile {
   display: flex;
   align-items: center;
@@ -367,6 +436,7 @@ a {
 
 .page-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-end;
   gap: 1.5rem;
@@ -1378,6 +1448,7 @@ a {
 
 .editor__heading {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
@@ -1585,6 +1656,7 @@ a {
 
 .quiz__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 1rem;
 }
@@ -1813,6 +1885,200 @@ a {
   font-weight: 700;
 }
 
+/* ---------- challenges ---------- */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.filter-chip {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-chip:hover {
+  background: var(--hover);
+}
+
+.filter-chip[aria-pressed='true'] {
+  border-color: transparent;
+  background: var(--accent-grad);
+  box-shadow: var(--shadow-button);
+  color: var(--accent-ink);
+}
+
+.chip--easy {
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+}
+
+.chip--medium {
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
+  color: var(--warn);
+}
+
+.chip--hard {
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+  color: var(--bad);
+}
+
+.challenge {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.challenge .page-header {
+  margin-bottom: 0;
+}
+
+.challenge h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+}
+
+.lesson__body code {
+  overflow-wrap: anywhere;
+}
+
+.challenge__solved {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+}
+
+.file-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.file-box h2 {
+  margin-bottom: 0.2rem;
+}
+
+.file-box p,
+.file-box strong {
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  padding: 0.9rem 1.2rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+}
+
+.hint summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--link);
+}
+
+.hint p {
+  margin-top: 0.75rem;
+  color: var(--ink-body);
+}
+
+.flag-form {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.flag-form label {
+  flex: 1 1 14rem;
+}
+
+.flag-form + .notice {
+  margin-top: 1rem;
+}
+
+.form__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+}
+
+.challenge-row {
+  flex-wrap: wrap;
+}
+
+.challenge-row .toolbar {
+  flex: 1 1 100%;
+  order: 3;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
+}
+
+.leaderboard {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard th,
+.leaderboard td {
+  padding: 0.85rem 1.1rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.leaderboard td:nth-child(2) {
+  min-width: 9rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.leaderboard .chip {
+  margin-left: 0.6rem;
+  padding: 0.15rem 0.7rem;
+  white-space: nowrap;
+}
+
+.leaderboard th {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.leaderboard tbody tr + tr td {
+  border-top: 1px solid var(--line);
+}
+
+.leaderboard .num {
+  text-align: right;
+}
+
+.leaderboard .is-me {
+  background: var(--hover);
+  font-weight: 700;
+}
+
+.leaderboard .gap td {
+  color: var(--ink-soft);
+  text-align: center;
+}
+
 /* ---------- responsive ---------- */
 
 @media (max-width: 1500px) {
@@ -1831,15 +2097,74 @@ a {
 }
 
 /* Narrow desktops: drop the nav icons so five tabs and the account area still fit. */
-@media (min-width: 901px) and (max-width: 1280px) {
+@media (min-width: 1181px) and (max-width: 1280px) {
   .topbar__link svg {
     display: none;
   }
 }
 
-@media (max-width: 1100px) {
+/* Anything narrower: the tabs move into a menu under the bar, so nothing is squeezed or overlaps. */
+@media (max-width: 1180px) {
+  .topbar__menu {
+    display: grid;
+  }
+
+  .topbar__nav {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    left: 0;
+    right: 0;
+    display: none;
+    flex: none;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0.6rem;
+    border: 1px solid var(--nav-line);
+    border-radius: 28px;
+    background: var(--panel);
+    box-shadow: var(--shadow-nav);
+  }
+
+  .topbar.is-open .topbar__nav {
+    display: flex;
+  }
+
+  .topbar__link {
+    padding: 0.85rem 1.1rem;
+  }
+
+  .topbar__tools {
+    gap: 0.75rem;
+  }
+
   .topbar__profile {
-    padding: 0 0.9rem 0 0.9rem;
+    padding: 0 0.75rem;
+  }
+}
+
+/* Phones: sign out moves into the menu and the brand name gives way to the logo. */
+@media (max-width: 640px) {
+  .topbar {
+    padding-left: 1rem;
+  }
+
+  .topbar__logout,
+  .topbar__profile {
+    display: none;
+  }
+
+  .topbar__signout {
+    display: inline-flex;
+    margin-top: 0.3rem;
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 999px 999px;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand span {
+    display: none;
   }
 }
 
@@ -1874,20 +2199,14 @@ a {
     display: none;
   }
 
-  .topbar {
-    flex-wrap: wrap;
-    border-radius: 32px;
-  }
-
-  .topbar__nav {
-    order: 3;
-    flex-basis: 100%;
-    margin-left: 0;
-    overflow-x: auto;
-  }
 }
 
 @media (max-width: 760px) {
+  .leaderboard th,
+  .leaderboard td {
+    padding: 0.75rem 0.7rem;
+  }
+
   .auth-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1915,11 +2234,6 @@ a {
 
   .content {
     padding-top: 2rem;
-  }
-
-  .topbar__profile {
-    border-inline: 0;
-    padding: 0;
   }
 
   .timeline__card {

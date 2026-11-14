@@ -15,9 +15,14 @@ export function InstructorPage() {
         title="Instructor"
         description="Create and manage your courses and lessons."
         actions={
-          <Link to="/instructor/courses/new" className="button">
-            + New course
-          </Link>
+          <>
+            <Link to="/instructor/challenges" className="button button--quiet">
+              Challenges
+            </Link>
+            <Link to="/instructor/courses/new" className="button">
+              + New course
+            </Link>
+          </>
         }
       />
 

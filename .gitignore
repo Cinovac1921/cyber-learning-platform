@@ -19,3 +19,5 @@ Thumbs.db
 *.log
 *.tsbuildinfo
 backend/src/generated/
+# files instructors upload for challenges
+backend/uploads/

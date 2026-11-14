@@ -19,6 +19,20 @@ enum CourseLevel {
   ADVANCED
 }
 
+enum ChallengeCategory {
+  NETWORK_ANALYSIS
+  FORENSICS
+  WEB
+  REVERSE_ENGINEERING
+  CRYPTOGRAPHY
+}
+
+enum ChallengeDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
@@ -28,6 +42,8 @@ model User {
   courses      Course[]
   progress     LessonProgress[]
   attempts     Attempt[]
+  challenges   Challenge[]
+  challengeSolves ChallengeSolve[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -160,4 +176,47 @@ model AttemptAnswer {
   @@index([questionId])
   @@index([optionId])
   @@map("attempt_answers")
+}
+
+
+/// A capture-the-flag challenge. The flag is never stored as text: only a salted hash of it.
+model Challenge {
+  id          Int                 @id @default(autoincrement())
+  author      User                @relation(fields: [authorId], references: [id])
+  authorId    Int
+  title       String              @db.VarChar(120)
+  category    ChallengeCategory
+  difficulty  ChallengeDifficulty @default(EASY)
+  points      Int                 @default(100)
+  description String              @db.Text
+  hint        String              @default("") @db.VarChar(500)
+  flagSalt    String              @db.VarChar(32)
+  flagHash    String              @db.VarChar(64)
+  /// The file students download, if any. fileKey is a random name on disk, never the original name.
+  fileKey     String?             @db.VarChar(64)
+  fileName    String?             @db.VarChar(200)
+  fileSize    Int?
+  published   Boolean             @default(false)
+  solves      ChallengeSolve[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([authorId])
+  @@index([category])
+  @@map("challenges")
+}
+
+/// One student solving one challenge. Points are copied here so editing a challenge later does not change old scores.
+model ChallengeSolve {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  challengeId Int
+  points      Int
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, challengeId])
+  @@index([challengeId])
+  @@map("challenge_solves")
 }

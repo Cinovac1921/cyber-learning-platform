@@ -5,14 +5,19 @@ import { AssessmentsPage } from '../features/assessments/AssessmentsPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { RegisterPage } from '../features/auth/RegisterPage'
 import { RequireAuth } from '../features/auth/RequireAuth'
+import { ChallengePage } from '../features/challenges/ChallengePage'
 import { ChallengesPage } from '../features/challenges/ChallengesPage'
+import { LeaderboardPage } from '../features/challenges/LeaderboardPage'
 import { CoursesPage } from '../features/courses/CoursesPage'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { InstructorPage } from '../features/instructor/InstructorPage'
 import { AssessmentEditorPage } from '../features/instructor/AssessmentEditorPage'
+import { ChallengeEditorPage } from '../features/instructor/ChallengeEditorPage'
 import { CourseEditorPage } from '../features/instructor/CourseEditorPage'
+import { InstructorChallengesPage } from '../features/instructor/InstructorChallengesPage'
 import { LessonEditorPage } from '../features/instructor/LessonEditorPage'
 import { NewAssessmentPage } from '../features/instructor/NewAssessmentPage'
+import { NewChallengePage } from '../features/instructor/NewChallengePage'
 import { NewCoursePage } from '../features/instructor/NewCoursePage'
 import { CoursePage } from '../features/courses/CoursePage'
 import { LessonPage } from '../features/lessons/LessonPage'
@@ -43,6 +48,8 @@ export const router = createBrowserRouter([
           { path: 'courses/:slug', element: <CoursePage /> },
           { path: 'courses/:slug/lessons/:position', element: <LessonPage /> },
           { path: 'challenges', element: <ChallengesPage /> },
+          { path: 'challenges/leaderboard', element: <LeaderboardPage /> },
+          { path: 'challenges/:id', element: <ChallengePage /> },
           { path: 'assessments', element: <AssessmentsPage /> },
           { path: 'assessments/:id', element: <AssessmentPage /> },
           { path: 'assessments/:id/results/:attemptId', element: <AssessmentResultPage /> },
@@ -50,8 +57,11 @@ export const router = createBrowserRouter([
       },
       {
         element: <RequireAuth role="INSTRUCTOR" />,
-                children: [
+        children: [
           { path: 'instructor', element: <InstructorPage /> },
+          { path: 'instructor/challenges', element: <InstructorChallengesPage /> },
+          { path: 'instructor/challenges/new', element: <NewChallengePage /> },
+          { path: 'instructor/challenges/:challengeId', element: <ChallengeEditorPage /> },
           { path: 'instructor/courses/new', element: <NewCoursePage /> },
           { path: 'instructor/courses/:id', element: <CourseEditorPage /> },
           { path: 'instructor/courses/:id/lessons/new', element: <LessonEditorPage /> },

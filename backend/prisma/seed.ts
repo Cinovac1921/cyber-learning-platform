@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { hashFlag } from '../src/challenges/flag';
 
 const url = new URL(process.env.DATABASE_URL ?? '');
 const prisma = new PrismaClient({
@@ -220,6 +221,74 @@ const assessments: Record<string, SeedAssessment> = {
   },
 };
 
+
+interface SeedChallenge {
+  title: string;
+  category: 'NETWORK_ANALYSIS' | 'FORENSICS' | 'WEB' | 'REVERSE_ENGINEERING' | 'CRYPTOGRAPHY';
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  points: number;
+  description: string;
+  hint: string;
+  flag: string;
+}
+
+const b64 = (text: string) => Buffer.from(text).toString('base64');
+const caesar = (text: string, shift: number) =>
+  text.replace(/[a-z]/gi, (letter) => {
+    const base = letter <= 'Z' ? 65 : 97;
+    return String.fromCharCode(((letter.charCodeAt(0) - base + shift) % 26) + base);
+  });
+
+// Sample challenges so the page is not empty. Their flags are visible in this file,
+// so unpublish or delete them before using the platform for real.
+const sampleChallenges: SeedChallenge[] = [
+  {
+    title: 'Cookie monster',
+    category: 'WEB',
+    difficulty: 'EASY',
+    points: 50,
+    description: `A web app stores your login state in a cookie instead of on the server. You copied this cookie from your browser's developer tools:\n\n\`session=${b64(JSON.stringify({ role: 'user', note: 'flag{cookies_are_just_base64}' }))}\`\n\nCookies are controlled by the user, so anything inside one can be read and changed. Decode the value and find the flag.`,
+    hint: 'The value looks like Base64. Decode it, then read the JSON inside.',
+    flag: 'flag{cookies_are_just_base64}',
+  },
+  {
+    title: "Caesar's secret",
+    category: 'CRYPTOGRAPHY',
+    difficulty: 'EASY',
+    points: 50,
+    description: `A message was encrypted with a very old cipher. Only letters were changed; braces, digits and underscores stayed the same.\n\n\`${caesar('flag{veni_vidi_vici}', 3)}\`\n\nDecrypt it to get the flag.`,
+    hint: 'Julius Caesar shifted every letter by 3 places.',
+    flag: 'flag{veni_vidi_vici}',
+  },
+  {
+    title: 'Hidden in the metadata',
+    category: 'FORENSICS',
+    difficulty: 'EASY',
+    points: 50,
+    description: `You are investigating a photo from a suspect's phone. Its metadata looks ordinary, except for one field:\n\n\`File Name : holiday.jpg\`\n\n\`Camera Model : PhoneCam X\`\n\n\`Comment : ${b64('flag{metadata_never_forgets}')}\`\n\nFiles often carry data their owners do not know about. Recover the flag.`,
+    hint: 'Look closely at the Comment field and how its value is encoded.',
+    flag: 'flag{metadata_never_forgets}',
+  },
+  {
+    title: 'Plain text passwords',
+    category: 'NETWORK_ANALYSIS',
+    difficulty: 'EASY',
+    points: 50,
+    description: `In a packet capture of unencrypted web traffic you find this request:\n\n\`GET /admin HTTP/1.1\`\n\n\`Host: intranet.local\`\n\n\`Authorization: Basic ${b64('admin:flag{basic_auth_is_not_encryption}')}\`\n\nThe value after Basic is not encrypted. What is the admin's password? Submit it as the flag.`,
+    hint: 'HTTP Basic authentication sends username:password, only Base64 encoded.',
+    flag: 'flag{basic_auth_is_not_encryption}',
+  },
+  {
+    title: 'XOR check',
+    category: 'REVERSE_ENGINEERING',
+    difficulty: 'MEDIUM',
+    points: 100,
+    description: `A program checks a password with this logic:\n\n\`for each byte b of the input: output b XOR 42\`\n\nThe program accepts the password only when the output equals these decimal bytes:\n\n\`${[...Buffer.from('flag{xor_is_reversible}')].map((byte) => byte ^ 42).join(', ')}\`\n\nWork out the password the program expects. That password is the flag.`,
+    hint: 'XOR is its own inverse: applying the same key again gives back the input.',
+    flag: 'flag{xor_is_reversible}',
+  },
+];
+
 async function main() {
   const author = await prisma.user.findFirst({ where: { role: 'INSTRUCTOR' } });
   if (!author) {
@@ -301,6 +370,23 @@ async function main() {
       },
     });
     console.log(`  Seeded assessment "${quiz.title}" (${quiz.questions.length} questions)`);
+  }
+
+  // Created once and then left alone, so an instructor's edits and flags are not overwritten.
+  for (const challenge of sampleChallenges) {
+    const existing = await prisma.challenge.findFirst({
+      where: { authorId: author.id, title: challenge.title },
+      select: { id: true },
+    });
+    if (existing) {
+      console.log(`Challenge "${challenge.title}" already exists, left as it is`);
+      continue;
+    }
+    const { flag, ...rest } = challenge;
+    await prisma.challenge.create({
+      data: { ...rest, ...hashFlag(flag), authorId: author.id, published: true },
+    });
+    console.log(`Seeded challenge "${challenge.title}"`);
   }
 }
 

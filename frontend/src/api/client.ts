@@ -59,7 +59,48 @@ async function request<T>(
   return payload as T
 }
 
+/** Sends a file as multipart form data. The browser sets the Content-Type, including the boundary. */
+async function sendForm<T>(method: string, path: string, form: FormData): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  if (authToken) headers.Authorization = `Bearer ${authToken}`
+
+  const response = await fetch(`${BASE_URL}${path}`, { method, headers, body: form })
+  const isJson = response.headers.get('content-type')?.includes('application/json')
+  const payload: unknown = isJson ? await response.json() : await response.text()
+
+  if (!response.ok) {
+    throw new ApiError(response.status, readErrorMessage(payload, response.status), payload)
+  }
+  return payload as T
+}
+
+/**
+ * Downloads a file that needs the sign-in token, so a plain link cannot be used.
+ * Fetches it, then saves it through a temporary link.
+ */
+export async function downloadFile(path: string, fileName: string): Promise<void> {
+  const headers: Record<string, string> = {}
+  if (authToken) headers.Authorization = `Bearer ${authToken}`
+
+  const response = await fetch(`${BASE_URL}${path}`, { headers })
+  if (!response.ok) {
+    const isJson = response.headers.get('content-type')?.includes('application/json')
+    const payload: unknown = isJson ? await response.json() : await response.text()
+    throw new ApiError(response.status, readErrorMessage(payload, response.status), payload)
+  }
+
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.append(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export const api = {
+  upload: <T>(path: string, form: FormData) => sendForm<T>('PUT', path, form),
   get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>('POST', path, { ...options, body }),
