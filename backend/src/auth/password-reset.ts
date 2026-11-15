@@ -7,7 +7,7 @@ export const RESET_TOKEN_TTL_MINUTES = 30;
 export const RESET_COOLDOWN_SECONDS = 60;
 
 /** The same answer for every bad link (wrong, used, expired), so a link tells an attacker nothing. */
-export const RESET_LINK_INVALID_MESSAGE = 'This reset link is invalid or has expired. Request a new one.';
+export const RESET_LINK_INVALID_MESSAGE = 'This reset link is invalid or has expired.';
 
 /** The same answer whether or not an account exists, so nobody can use this form to find out who has one. */
 export const RESET_REQUESTED_MESSAGE = 'If an account uses that email, a reset link is on its way. It works for 30 minutes.';

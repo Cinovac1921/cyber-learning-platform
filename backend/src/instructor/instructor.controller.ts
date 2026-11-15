@@ -47,6 +47,18 @@ export class InstructorController {
     return this.instructor.updateCourse(id, request.user!.sub, dto);
   }
 
+  /** Sends a public-library course to the admins for review. */
+  @Post('courses/:id/submit')
+  submitForReview(@Param('id', ParseIntPipe) id: number, @Req() request: AuthenticatedRequest) {
+    return this.instructor.submitForReview(id, request.user!.sub);
+  }
+
+  /** Takes a pending or live public course offline and unlocks it for editing. */
+  @Post('courses/:id/withdraw')
+  withdraw(@Param('id', ParseIntPipe) id: number, @Req() request: AuthenticatedRequest) {
+    return this.instructor.withdraw(id, request.user!.sub);
+  }
+
   @Delete('courses/:id')
   deleteCourse(@Param('id', ParseIntPipe) id: number, @Req() request: AuthenticatedRequest) {
     return this.instructor.deleteCourse(id, request.user!.sub);

@@ -70,7 +70,7 @@ export function NewCoursePage() {
           </select>
           <span className="form__hint">
             {placement === 'public'
-              ? 'Students see it in the public library once you publish it.'
+              ? 'An admin reviews it first. Once approved, it appears in the public library for everyone.'
               : "Only this classroom's students can see it once you publish it. This can't be changed later."}
           </span>
         </label>

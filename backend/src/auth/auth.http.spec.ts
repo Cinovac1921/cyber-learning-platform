@@ -19,6 +19,7 @@ describe('Forgot and reset password over HTTP', () => {
   let app: INestApplication;
   let server: Server;
   const requestPasswordReset = jest.fn().mockResolvedValue(undefined);
+  const isResetLinkUsable = jest.fn().mockResolvedValue(true);
   const resetPassword = jest.fn().mockResolvedValue({ message: 'Your password has been changed. You can sign in now.' });
 
   // A fresh app for every test, so the rate limit's counter starts at zero each time.
@@ -28,7 +29,7 @@ describe('Forgot and reset password over HTTP', () => {
       imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }])],
       controllers: [AuthController],
       providers: [
-        { provide: AuthService, useValue: { requestPasswordReset, resetPassword } },
+        { provide: AuthService, useValue: { requestPasswordReset, resetPassword, isResetLinkUsable } },
         { provide: JwtService, useValue: {} },
         { provide: MailService, useValue: {} },
       ],
@@ -85,6 +86,23 @@ describe('Forgot and reset password over HTTP', () => {
     }
     await request(server).post('/auth/forgot-password').send({ email: 'sam@example.com' }).expect(429);
     expect(requestPasswordReset).toHaveBeenCalledTimes(3);
+  });
+
+  it('tells the reset page whether a link still works', async () => {
+    const token = 'a'.repeat(43);
+    isResetLinkUsable.mockResolvedValueOnce(false);
+    const dead = await request(server).post('/auth/reset-password/check').send({ token });
+    const alive = await request(server).post('/auth/reset-password/check').send({ token });
+
+    expect(dead.status).toBe(200);
+    expect(dead.body).toEqual({ valid: false });
+    expect(alive.body).toEqual({ valid: true });
+  });
+
+  it('does not even look up a token that is clearly not one', async () => {
+    await request(server).post('/auth/reset-password/check').send({ token: 'tiny' }).expect(400);
+    await request(server).post('/auth/reset-password/check').send({}).expect(400);
+    expect(isResetLinkUsable).not.toHaveBeenCalled();
   });
 
   it('resets with a token and a long enough password', async () => {

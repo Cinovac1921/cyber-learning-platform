@@ -113,6 +113,15 @@ export class AuthService {
     }
   }
 
+  /** Whether a reset link can still be used, so the page can say so before asking for a password. It spends nothing. */
+  async isResetLinkUsable(token: string): Promise<boolean> {
+    const record = await this.prisma.passwordResetToken.findFirst({
+      where: { tokenHash: hashResetToken(token), expiresAt: { gt: new Date() } },
+      select: { id: true },
+    });
+    return record !== null;
+  }
+
   /** Sets a new password from a reset link. A link works once. */
   async resetPassword(token: string, password: string) {
     const record = await this.prisma.passwordResetToken.findUnique({

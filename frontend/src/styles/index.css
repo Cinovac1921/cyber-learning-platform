@@ -2447,3 +2447,67 @@ a {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Admin: sub-navigation and course review */
+.subnav {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.subnav a {
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.subnav a:hover {
+  background: var(--hover);
+}
+
+.subnav a[aria-current='page'] {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.review-block {
+  margin-top: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.review-block h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.review-questions {
+  display: grid;
+  gap: 1rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.review-options {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-options li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.review-option--correct {
+  font-weight: 600;
+}

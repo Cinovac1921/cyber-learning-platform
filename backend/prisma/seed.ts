@@ -310,6 +310,8 @@ async function main() {
         summary: course.summary,
         level: course.level,
         published: true,
+        // The sample courses are the platform's own, so they count as already reviewed.
+        reviewStatus: 'APPROVED',
       },
       create: {
         title: course.title,
@@ -317,6 +319,7 @@ async function main() {
         summary: course.summary,
         level: course.level,
         published: true,
+        reviewStatus: 'APPROVED',
         authorId: author.id,
       },
     });

@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { listMyCourses } from '../../api/instructor'
 import { listMyClassrooms } from '../../api/instructor-classrooms'
+import { CourseStatusChip } from './CourseStatusChip'
 import { useResource } from '../../app/useResource'
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -94,9 +95,11 @@ export function InstructorPage() {
           {courses.data.map((course) => (
             <article key={course.id} className="course-card">
               <div className="toolbar">
-                <span className={course.published ? 'chip chip--live' : 'chip'}>
-                  {course.published ? 'Published' : 'Draft'}
-                </span>
+                <CourseStatusChip
+                  scope={course.scope}
+                  published={course.published}
+                  reviewStatus={course.reviewStatus}
+                />
                 <span className="chip">{levelLabel(course.level)}</span>
                 {course.scope === 'TEMPLATE' && <span className="chip">Template</span>}
                 {course.scope === 'CLASSROOM' && course.classroom && (

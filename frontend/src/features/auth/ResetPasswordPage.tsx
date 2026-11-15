@@ -1,6 +1,6 @@
 import { useEffect, useState, type SyntheticEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { resetPassword } from '../../api/auth'
+import { checkResetLink, resetPassword } from '../../api/auth'
 import { ApiError } from '../../api/client'
 import { PageHeader } from '../../components/PageHeader'
 
@@ -18,6 +18,24 @@ export function ResetPasswordPage() {
     if (params.has('token')) navigate('/reset-password', { replace: true })
   }, [params, navigate])
 
+  // Ask the server whether the link still works, so a used or expired one says so straight away
+  // instead of showing a form that can only fail. If the check itself can't be made, show the form anyway.
+  const [link, setLink] = useState<'checking' | 'usable' | 'dead'>(token ? 'checking' : 'dead')
+  useEffect(() => {
+    if (!token) return
+    let cancelled = false
+    checkResetLink(token)
+      .then((result) => {
+        if (!cancelled) setLink(result.valid ? 'usable' : 'dead')
+      })
+      .catch(() => {
+        if (!cancelled) setLink('usable')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token])
+
   if (done) {
     return (
       <div className="auth-card">
@@ -29,10 +47,23 @@ export function ResetPasswordPage() {
     )
   }
 
-  if (!token) {
+  if (link === 'checking') {
     return (
       <div className="auth-card">
-        <PageHeader title="This link doesn't work" description="It is missing its code, or it was already used." />
+        <p className="loading" role="status">
+          Checking your link…
+        </p>
+      </div>
+    )
+  }
+
+  if (link === 'dead' || !token) {
+    return (
+      <div className="auth-card">
+        <PageHeader
+          title="This link doesn't work"
+          description="It has expired, was already used, or is incomplete. Links work once, for 30 minutes."
+        />
         <p className="form__alt">
           <Link to="/forgot-password">Request a new link</Link>
         </p>

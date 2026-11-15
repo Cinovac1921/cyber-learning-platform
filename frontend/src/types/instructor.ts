@@ -3,6 +3,9 @@ import type { CourseLevel } from './learning'
 /** PUBLIC shows in the public library. TEMPLATE is starter content students never see. */
 export type CourseScope = 'PUBLIC' | 'TEMPLATE' | 'CLASSROOM'
 
+/** Where a public-library course stands: a draft, waiting for an admin, live, or sent back. */
+export type ReviewStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'
+
 export interface InstructorCourseSummary {
   id: number
   title: string
@@ -11,6 +14,7 @@ export interface InstructorCourseSummary {
   level: CourseLevel
   published: boolean
   scope: CourseScope
+  reviewStatus: ReviewStatus
   classroom: { name: string } | null
   updatedAt: string
   lessonCount: number
@@ -32,6 +36,9 @@ export interface InstructorCourse {
   level: CourseLevel
   published: boolean
   scope: CourseScope
+  reviewStatus: ReviewStatus
+  /** The admin's reason, when the course was rejected or taken down. */
+  reviewNote: string | null
   classroom: { id: number; name: string } | null
   lessons: InstructorLesson[]
 }

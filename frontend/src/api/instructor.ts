@@ -84,3 +84,13 @@ export function deleteQuestion(questionId: number) {
 export function moveQuestion(questionId: number, direction: 'up' | 'down') {
   return api.post<Ok>(`/instructor/questions/${questionId}/move`, { direction })
 }
+
+/** Sends a public-library course to the admins. For an admin's own course it goes live at once. */
+export function submitCourseForReview(courseId: number) {
+  return api.post<{ reviewStatus: 'PENDING' | 'APPROVED' }>(`/instructor/courses/${courseId}/submit`)
+}
+
+/** Takes a pending or live public course offline, which unlocks it for editing. */
+export function withdrawCourse(courseId: number) {
+  return api.post<{ ok: boolean }>(`/instructor/courses/${courseId}/withdraw`)
+}

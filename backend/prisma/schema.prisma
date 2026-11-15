@@ -22,6 +22,15 @@ enum CourseScope {
   CLASSROOM
 }
 
+/// Where a public-library course stands. NONE: a draft nobody has submitted. PENDING: waiting for an admin.
+/// APPROVED: live. REJECTED: sent back with a note. Only APPROVED public courses are ever shown to students.
+enum ReviewStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum CourseLevel {
   BEGINNER
   INTERMEDIATE
@@ -50,7 +59,8 @@ model User {
   role         Role     @default(STUDENT)
   /// Login tokens carry the number they were issued under. Raising it signs the account out everywhere.
   tokenVersion Int      @default(0)
-  courses      Course[]
+  courses      Course[] @relation("CourseAuthor")
+  reviewedCourses Course[] @relation("CourseReviewer")
   progress     LessonProgress[]
   attempts     Attempt[]
   challenges   Challenge[]
@@ -75,8 +85,15 @@ model Course {
   /// Only set for CLASSROOM courses.
   classroom   Classroom?  @relation(fields: [classroomId], references: [id], onDelete: Restrict)
   classroomId Int?
-  author    User        @relation(fields: [authorId], references: [id])
+  author    User        @relation("CourseAuthor", fields: [authorId], references: [id])
   authorId  Int
+  reviewStatus ReviewStatus @default(NONE)
+  /// The admin's reason when a course is rejected or taken down.
+  reviewNote   String?      @db.VarChar(500)
+  submittedAt  DateTime?
+  reviewedAt   DateTime?
+  reviewer     User?        @relation("CourseReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedById Int?
   lessons   Lesson[]
   assessments Assessment[]
   createdAt DateTime    @default(now())
@@ -84,6 +101,8 @@ model Course {
 
   @@index([authorId])
   @@index([classroomId])
+  @@index([reviewStatus])
+  @@index([reviewedById])
   @@map("courses")
 }
 

@@ -5,6 +5,7 @@ import {
   QuestionInputDto,
   UpdateAssessmentDto,
 } from './dto/assessment.dto';
+import { assertEditable } from './course-lock';
 import { checkOptions } from './question-rules';
 
 /** Trims text and rejects values that are only spaces. */
@@ -45,7 +46,8 @@ export class InstructorAssessmentsService {
   }
 
   async create(courseId: number, userId: number, dto: CreateAssessmentDto) {
-    await this.ownCourse(courseId, userId);
+    const course = await this.ownCourse(courseId, userId);
+    assertEditable(course.reviewStatus);
 
     return this.prisma.assessment.create({
       data: {
@@ -96,6 +98,7 @@ export class InstructorAssessmentsService {
 
   async update(assessmentId: number, userId: number, dto: UpdateAssessmentDto) {
     const assessment = await this.ownAssessment(assessmentId, userId);
+    assertEditable(assessment.course.reviewStatus);
 
     const data: {
       title?: string;
@@ -119,7 +122,8 @@ export class InstructorAssessmentsService {
 
   /** Deleting an assessment also deletes its questions and every student's attempts. */
   async remove(assessmentId: number, userId: number) {
-    await this.ownAssessment(assessmentId, userId);
+    const assessment = await this.ownAssessment(assessmentId, userId);
+    assertEditable(assessment.course.reviewStatus);
     await this.prisma.assessment.delete({ where: { id: assessmentId } });
     return { ok: true };
   }
@@ -128,7 +132,8 @@ export class InstructorAssessmentsService {
 
   /** Adds a question at the end of the assessment. */
   async addQuestion(assessmentId: number, userId: number, dto: QuestionInputDto) {
-    await this.ownAssessment(assessmentId, userId);
+    const assessment = await this.ownAssessment(assessmentId, userId);
+    assertEditable(assessment.course.reviewStatus);
     const options = checkOptions(dto.options);
 
     const last = await this.prisma.question.findFirst({
@@ -157,6 +162,7 @@ export class InstructorAssessmentsService {
    */
   async updateQuestion(questionId: number, userId: number, dto: QuestionInputDto) {
     const question = await this.ownQuestion(questionId, userId);
+    assertEditable(question.assessment.course.reviewStatus);
     const options = checkOptions(dto.options);
 
     const existing = await this.prisma.option.findMany({
@@ -185,6 +191,7 @@ export class InstructorAssessmentsService {
   /** Deletes a question and closes the gap in the numbering. */
   async deleteQuestion(questionId: number, userId: number) {
     const question = await this.ownQuestion(questionId, userId);
+    assertEditable(question.assessment.course.reviewStatus);
 
     const following = await this.prisma.question.findMany({
       where: { assessmentId: question.assessmentId, position: { gt: question.position } },
@@ -205,6 +212,7 @@ export class InstructorAssessmentsService {
   /** Swaps a question with the one above or below it. */
   async moveQuestion(questionId: number, userId: number, direction: 'up' | 'down') {
     const question = await this.ownQuestion(questionId, userId);
+    assertEditable(question.assessment.course.reviewStatus);
 
     const neighbour = await this.prisma.question.findFirst({
       where: {
@@ -233,7 +241,7 @@ export class InstructorAssessmentsService {
   private async ownCourse(courseId: number, userId: number) {
     const course = await this.prisma.course.findFirst({
       where: { id: courseId, authorId: userId },
-      select: { id: true },
+      select: { id: true, reviewStatus: true },
     });
     if (!course) {
       throw new NotFoundException('Course not found.');
@@ -244,7 +252,11 @@ export class InstructorAssessmentsService {
   private async ownAssessment(assessmentId: number, userId: number) {
     const assessment = await this.prisma.assessment.findFirst({
       where: { id: assessmentId, course: { authorId: userId } },
-      select: { id: true, _count: { select: { questions: true } } },
+      select: {
+        id: true,
+        course: { select: { reviewStatus: true } },
+        _count: { select: { questions: true } },
+      },
     });
     if (!assessment) {
       throw new NotFoundException('Assessment not found.');
@@ -255,7 +267,12 @@ export class InstructorAssessmentsService {
   private async ownQuestion(questionId: number, userId: number) {
     const question = await this.prisma.question.findFirst({
       where: { id: questionId, assessment: { course: { authorId: userId } } },
-      select: { id: true, assessmentId: true, position: true },
+      select: {
+        id: true,
+        assessmentId: true,
+        position: true,
+        assessment: { select: { course: { select: { reviewStatus: true } } } },
+      },
     });
     if (!question) {
       throw new NotFoundException('Question not found.');

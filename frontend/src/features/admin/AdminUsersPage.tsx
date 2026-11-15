@@ -8,6 +8,7 @@ import { PageHeader } from '../../components/PageHeader'
 import type { AdminUser } from '../../types/admin'
 import type { Role } from '../../types/api'
 import { ROLE_LABEL, ROLE_OPTIONS } from '../auth/roles'
+import { AdminTabs } from './AdminTabs'
 import { useAuth } from '../auth/useAuth'
 
 function UserRow({ user, isMe, onSaved }: { user: AdminUser; isMe: boolean; onSaved: () => void }) {
@@ -86,6 +87,8 @@ export function AdminUsersPage() {
         title="Users"
         description="Choose who is a student, an instructor or an admin. You can't change your own role."
       />
+
+      <AdminTabs />
 
       <form className="admin-search" role="search" onSubmit={submit}>
         <input

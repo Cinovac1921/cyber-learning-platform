@@ -12,3 +12,10 @@ export class ResetPasswordDto {
   @MaxLength(128)
   password!: string;
 }
+
+export class CheckResetTokenDto {
+  @IsString()
+  @MinLength(20)
+  @MaxLength(200)
+  token!: string;
+}

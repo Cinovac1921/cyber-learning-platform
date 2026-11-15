@@ -94,6 +94,27 @@ describe('AuthService.requestPasswordReset', () => {
   });
 });
 
+describe('AuthService.isResetLinkUsable', () => {
+  it('says yes for a link that exists and has not expired, without spending it', async () => {
+    const { service, prisma } = makeService();
+    prisma.passwordResetToken.findFirst.mockResolvedValue({ id: 5 });
+    await expect(service.isResetLinkUsable('a'.repeat(43))).resolves.toBe(true);
+
+    const where = prisma.passwordResetToken.findFirst.mock.calls[0][0].where as {
+      tokenHash: string;
+      expiresAt: { gt: Date };
+    };
+    expect(where.tokenHash).toBe(hashResetToken('a'.repeat(43)));
+    expect(where.expiresAt.gt).toBeInstanceOf(Date);
+    expect(prisma.passwordResetToken.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('says no for an unknown, used or expired link', async () => {
+    const { service } = makeService();
+    await expect(service.isResetLinkUsable('b'.repeat(43))).resolves.toBe(false);
+  });
+});
+
 describe('AuthService.resetPassword', () => {
   const token = 'a'.repeat(43);
 

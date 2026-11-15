@@ -7,15 +7,19 @@ import {
   getMyCourse,
   listCourseAssessments,
   moveLesson,
+  submitCourseForReview,
   updateCourse,
   updateLesson,
+  withdrawCourse,
 } from '../../api/instructor'
 import { useReloadableResource } from '../../app/useResource'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import type { CourseInput } from '../../types/instructor'
 import { useAuth } from '../auth/useAuth'
+import { levelLabel } from '../courses/levels'
 import { CourseForm } from './CourseForm'
+import { CourseStatusChip } from './CourseStatusChip'
 import { ScopeControl } from './ScopeControl'
 
 export function CourseEditorPage() {
@@ -62,12 +66,27 @@ export function CourseEditorPage() {
     return <ErrorNotice error={course.error} />
   }
 
-  const { title, slug, summary, level, published, scope, classroom, lessons } = course.data
+  const { title, slug, summary, level, published, scope, reviewStatus, reviewNote, classroom, lessons } =
+    course.data
   const details: CourseInput = { title, summary, level }
+  const isPublic = scope === 'PUBLIC'
+  const isAdmin = user?.role === 'ADMIN'
+  // A public course waiting for review, or live, can't be edited: withdraw it first.
+  const locked = isPublic && (reviewStatus === 'PENDING' || reviewStatus === 'APPROVED')
 
   async function saveDetails(values: CourseInput) {
     await updateCourse(courseId, values)
     reload()
+  }
+
+  async function withdraw() {
+    const question =
+      reviewStatus === 'APPROVED'
+        ? `Take "${title}" offline? Students will stop seeing it until an admin approves it again.`
+        : `Withdraw "${title}" from review? You can edit it and submit it again.`
+    if (window.confirm(question)) {
+      await run(() => withdrawCourse(courseId))
+    }
   }
 
   async function removeCourse() {
@@ -98,18 +117,34 @@ export function CourseEditorPage() {
                   View as student
                 </Link>
               )}
-              <button
-                type="button"
-                className={published ? 'button button--quiet' : 'button'}
-                onClick={() => void run(() => updateCourse(courseId, { published: !published }))}
-              >
-                {published ? 'Unpublish' : 'Publish'}
-              </button>
+              {isPublic ? (
+                locked ? (
+                  <button type="button" className="button button--quiet" onClick={() => void withdraw()}>
+                    Withdraw
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => void run(() => submitCourseForReview(courseId))}
+                  >
+                    {isAdmin ? 'Publish' : 'Submit for review'}
+                  </button>
+                )
+              ) : (
+                <button
+                  type="button"
+                  className={published ? 'button button--quiet' : 'button'}
+                  onClick={() => void run(() => updateCourse(courseId, { published: !published }))}
+                >
+                  {published ? 'Unpublish' : 'Publish'}
+                </button>
+              )}
             </>
           }
         />
         <p className="toolbar">
-          <span className={published ? 'chip chip--live' : 'chip'}>{published ? 'Published' : 'Draft'}</span>
+          <CourseStatusChip scope={scope} published={published} reviewStatus={reviewStatus} />
           {scope === 'TEMPLATE' && <span className="chip">Template</span>}
           {scope === 'CLASSROOM' && classroom && <span className="chip">{classroom.name}</span>}
           <span className="course-card__meta">
@@ -119,9 +154,15 @@ export function CourseEditorPage() {
                 ? published
                   ? `Only the students of ${classroom?.name ?? 'this classroom'} can see this course.`
                   : 'A draft. Once published, only your classroom students can see it.'
-                : published
-                ? 'Students can see this course.'
-                : 'Only you can see this course. Add lessons, then publish.'}
+                : reviewStatus === 'PENDING'
+                  ? 'Waiting for an admin to review it.'
+                  : reviewStatus === 'APPROVED'
+                    ? 'Live in the public library. Everyone can see it.'
+                    : reviewStatus === 'REJECTED'
+                      ? 'An admin sent this back. Fix it, then submit it again.'
+                      : isAdmin
+                        ? 'A draft. Only you can see it. Add lessons, then publish it.'
+                        : 'A draft. Only you can see it. Add lessons, then submit it for review.'}
           </span>
         </p>
       </div>
@@ -132,9 +173,30 @@ export function CourseEditorPage() {
         </p>
       )}
 
+      {isPublic && reviewStatus === 'REJECTED' && reviewNote && (
+        <p className="notice" role="status">
+          <strong>Reviewer's note:</strong> {reviewNote}
+        </p>
+      )}
+
+      {locked && (
+        <p className="notice" role="status">
+          <strong>Locked.</strong>{' '}
+          {reviewStatus === 'PENDING'
+            ? "This course is waiting for review, so it can't be changed. Withdraw it if you need to edit it."
+            : "This course is live, so it can't be changed. Withdraw it to edit it. It will need approval again afterwards."}
+        </p>
+      )}
+
       <section className="editor__section">
         <h2>Details</h2>
-        <CourseForm initial={details} submitLabel="Save details" onSubmit={saveDetails} />
+        {locked ? (
+          <p className="course-card__meta">
+            {levelLabel(level)} · {summary}
+          </p>
+        ) : (
+          <CourseForm initial={details} submitLabel="Save details" onSubmit={saveDetails} />
+        )}
       </section>
 
       {user?.role === 'ADMIN' && scope !== 'CLASSROOM' && (
@@ -147,9 +209,11 @@ export function CourseEditorPage() {
       <section className="editor__section">
         <div className="editor__heading">
           <h2>Lessons</h2>
-          <Link to={`/instructor/courses/${courseId}/lessons/new`} className="button button--small">
-            + Add lesson
-          </Link>
+          {!locked && (
+            <Link to={`/instructor/courses/${courseId}/lessons/new`} className="button button--small">
+              + Add lesson
+            </Link>
+          )}
         </div>
 
         {lessons.length === 0 ? (
@@ -163,51 +227,53 @@ export function CourseEditorPage() {
                 </span>
                 <span className="lesson-row__title">{lesson.title}</span>
                 {!lesson.visible && <span className="chip">Hidden</span>}
-                <span className="row-actions">
-                  <button
-                    type="button"
-                    className="button button--quiet button--small"
-                    aria-label={`Move "${lesson.title}" up`}
-                    disabled={index === 0}
-                    onClick={() => void run(() => moveLesson(lesson.id, 'up'))}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--quiet button--small"
-                    aria-label={`Move "${lesson.title}" down`}
-                    disabled={index === lessons.length - 1}
-                    onClick={() => void run(() => moveLesson(lesson.id, 'down'))}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--quiet button--small"
-                    aria-label={`${lesson.visible ? 'Hide' : 'Show'} "${lesson.title}" ${lesson.visible ? 'from' : 'to'} students`}
-                    onClick={() => void run(() => updateLesson(lesson.id, { visible: !lesson.visible }))}
-                  >
-                    {lesson.visible ? 'Hide' : 'Show'}
-                  </button>
-                  <Link
-                    to={`/instructor/courses/${courseId}/lessons/${lesson.id}`}
-                    className="button button--quiet button--small"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    type="button"
-                    className="button button--danger button--small"
-                    onClick={() => {
-                      if (window.confirm(`Delete the lesson "${lesson.title}"?`)) {
-                        void run(() => deleteLesson(lesson.id))
-                      }
-                    }}
-                  >
-                    Delete
-                  </button>
-                </span>
+                {!locked && (
+                  <span className="row-actions">
+                    <button
+                      type="button"
+                      className="button button--quiet button--small"
+                      aria-label={`Move "${lesson.title}" up`}
+                      disabled={index === 0}
+                      onClick={() => void run(() => moveLesson(lesson.id, 'up'))}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="button button--quiet button--small"
+                      aria-label={`Move "${lesson.title}" down`}
+                      disabled={index === lessons.length - 1}
+                      onClick={() => void run(() => moveLesson(lesson.id, 'down'))}
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      className="button button--quiet button--small"
+                      aria-label={`${lesson.visible ? 'Hide' : 'Show'} "${lesson.title}" ${lesson.visible ? 'from' : 'to'} students`}
+                      onClick={() => void run(() => updateLesson(lesson.id, { visible: !lesson.visible }))}
+                    >
+                      {lesson.visible ? 'Hide' : 'Show'}
+                    </button>
+                    <Link
+                      to={`/instructor/courses/${courseId}/lessons/${lesson.id}`}
+                      className="button button--quiet button--small"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      type="button"
+                      className="button button--danger button--small"
+                      onClick={() => {
+                        if (window.confirm(`Delete the lesson "${lesson.title}"?`)) {
+                          void run(() => deleteLesson(lesson.id))
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </span>
+                )}
               </li>
             ))}
           </ol>
@@ -217,9 +283,11 @@ export function CourseEditorPage() {
       <section className="editor__section">
         <div className="editor__heading">
           <h2>Assessments</h2>
-          <Link to={`/instructor/courses/${courseId}/assessments/new`} className="button button--small">
-            + Add assessment
-          </Link>
+          {!locked && (
+            <Link to={`/instructor/courses/${courseId}/assessments/new`} className="button button--small">
+              + Add assessment
+            </Link>
+          )}
         </div>
 
         {assessments.status === 'loading' && (
@@ -249,24 +317,28 @@ export function CourseEditorPage() {
                 <span className="course-card__meta">
                   {item.questionCount} {item.questionCount === 1 ? 'question' : 'questions'}
                 </span>
-                <Link to={`/instructor/assessments/${item.id}`} className="button button--quiet button--small">
-                  Edit
-                </Link>
+                {!locked && (
+                  <Link to={`/instructor/assessments/${item.id}`} className="button button--quiet button--small">
+                    Edit
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <section className="editor__section">
-        <h2>Delete course</h2>
-        <p className="course-card__meta">
-          This removes the course, all its lessons, and every student's progress on them. It can't be undone.
-        </p>
-        <button type="button" className="button button--danger" onClick={() => void removeCourse()}>
-          Delete this course
-        </button>
-      </section>
+      {!locked && (
+        <section className="editor__section">
+          <h2>Delete course</h2>
+          <p className="course-card__meta">
+            This removes the course, all its lessons, and every student's progress on them. It can't be undone.
+          </p>
+          <button type="button" className="button button--danger" onClick={() => void removeCourse()}>
+            Delete this course
+          </button>
+        </section>
+      )}
     </div>
   )
 }

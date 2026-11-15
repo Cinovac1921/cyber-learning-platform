@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertEditable } from './course-lock';
 import { CreateCourseDto, type CourseScopeValue, UpdateCourseDto } from './dto/course.dto';
 import { CreateLessonDto, UpdateLessonDto } from './dto/lesson.dto';
 import { slugify } from './slug';
@@ -37,6 +39,7 @@ export class InstructorService {
         level: true,
         published: true,
         scope: true,
+        reviewStatus: true,
         classroom: { select: { name: true } },
         updatedAt: true,
         _count: { select: { lessons: true } },
@@ -83,6 +86,8 @@ export class InstructorService {
         level: true,
         published: true,
         scope: true,
+        reviewStatus: true,
+        reviewNote: true,
         classroom: { select: { id: true, name: true } },
         lessons: {
           orderBy: { position: 'asc' },
@@ -106,16 +111,32 @@ export class InstructorService {
       level?: UpdateCourseDto['level'];
       published?: boolean;
       scope?: CourseScopeValue;
+      reviewStatus?: 'NONE' | 'APPROVED';
+      reviewNote?: null;
+      reviewedAt?: Date | null;
+      reviewedById?: number | null;
     } = {};
+
+    if (dto.title !== undefined || dto.summary !== undefined || dto.level !== undefined) {
+      assertEditable(course.reviewStatus);
+    }
     if (dto.title !== undefined) data.title = clean(dto.title, 'Title');
     if (dto.summary !== undefined) data.summary = clean(dto.summary, 'Summary');
     if (dto.level !== undefined) data.level = dto.level;
+
     if (dto.published !== undefined) {
+      if (course.scope === 'PUBLIC') {
+        // Only a review (or an admin's own publish) can put a course in the public library.
+        throw new BadRequestException(
+          'Public courses go live through review. Use "Submit for review", or "Withdraw" to take one offline.',
+        );
+      }
       if (dto.published && course._count.lessons === 0) {
         throw new BadRequestException('Add at least one visible lesson before publishing.');
       }
       data.published = dto.published;
     }
+
     if (dto.scope !== undefined && dto.scope !== course.scope) {
       if (course.scope === 'CLASSROOM') {
         // Moving it out would make the classroom's lessons and graded quizzes public.
@@ -125,15 +146,92 @@ export class InstructorService {
       }
       await this.assertAdmin(userId);
       data.scope = dto.scope;
+      // Moving a course starts its review over. An admin who moves a published course into the
+      // public library is approving it in the same step.
+      data.reviewNote = null;
+      if (dto.scope === 'PUBLIC' && course.published) {
+        data.reviewStatus = 'APPROVED';
+        data.reviewedById = userId;
+        data.reviewedAt = new Date();
+      } else {
+        data.reviewStatus = 'NONE';
+        data.reviewedById = null;
+        data.reviewedAt = null;
+      }
     }
 
     await this.prisma.course.update({ where: { id: courseId }, data });
     return { ok: true };
   }
 
+  /**
+   * Sends a public-library course to the admins. An admin's own course goes live straight away,
+   * since admins are the reviewers. Either way the course is locked from now on.
+   */
+  async submitForReview(courseId: number, userId: number) {
+    const course = await this.ownCourse(courseId, userId);
+
+    if (course.scope !== 'PUBLIC') {
+      throw new BadRequestException('Only courses for the public library go through review.');
+    }
+    if (course.reviewStatus === 'PENDING') {
+      throw new BadRequestException('This course is already waiting for review.');
+    }
+    if (course.reviewStatus === 'APPROVED') {
+      throw new BadRequestException('This course is already live.');
+    }
+    if (course._count.lessons === 0) {
+      throw new BadRequestException('Add at least one visible lesson before submitting.');
+    }
+
+    const now = new Date();
+    const admin = await this.isAdmin(userId);
+    const data = admin
+      ? {
+          reviewStatus: 'APPROVED' as const,
+          published: true,
+          submittedAt: now,
+          reviewedAt: now,
+          reviewedById: userId,
+          reviewNote: null,
+        }
+      : {
+          reviewStatus: 'PENDING' as const,
+          submittedAt: now,
+          reviewedAt: null,
+          reviewedById: null,
+          reviewNote: null,
+        };
+
+    // One database step that only succeeds from a draft or a rejection, so two clicks can't both win.
+    const result = await this.prisma.course.updateMany({
+      where: { id: courseId, authorId: userId, scope: 'PUBLIC', reviewStatus: { in: ['NONE', 'REJECTED'] } },
+      data,
+    });
+    if (result.count !== 1) {
+      throw new ConflictException('This course changed while you were submitting it. Reload and try again.');
+    }
+    return { reviewStatus: data.reviewStatus };
+  }
+
+  /** Takes a pending or live public course back to a draft, which unlocks it for editing. */
+  async withdraw(courseId: number, userId: number) {
+    await this.ownCourse(courseId, userId);
+
+    const result = await this.prisma.course.updateMany({
+      where: { id: courseId, authorId: userId, scope: 'PUBLIC', reviewStatus: { in: ['PENDING', 'APPROVED'] } },
+      data: { reviewStatus: 'NONE', published: false, reviewNote: null },
+    });
+    if (result.count !== 1) {
+      throw new BadRequestException("This course isn't waiting for review or live, so there is nothing to withdraw.");
+    }
+    return { ok: true };
+  }
+
   /** Deleting a course also deletes its lessons and students' progress on them. */
   async deleteCourse(courseId: number, userId: number) {
-    await this.ownCourse(courseId, userId);
+    const course = await this.ownCourse(courseId, userId);
+    assertEditable(course.reviewStatus);
     await this.prisma.course.delete({ where: { id: courseId } });
     return { ok: true };
   }
@@ -142,7 +240,8 @@ export class InstructorService {
 
   /** Adds a lesson at the end of the course. */
   async createLesson(courseId: number, userId: number, dto: CreateLessonDto) {
-    await this.ownCourse(courseId, userId);
+    const course = await this.ownCourse(courseId, userId);
+    assertEditable(course.reviewStatus);
 
     const last = await this.prisma.lesson.findFirst({
       where: { courseId },
@@ -164,6 +263,7 @@ export class InstructorService {
 
   async updateLesson(lessonId: number, userId: number, dto: UpdateLessonDto) {
     const lesson = await this.ownLesson(lessonId, userId);
+    assertEditable(lesson.course.reviewStatus);
 
     const data: { title?: string; content?: string; visible?: boolean } = {};
     if (dto.title !== undefined) data.title = clean(dto.title, 'Title');
@@ -190,6 +290,7 @@ export class InstructorService {
   /** Deletes a lesson and closes the gap in the numbering. */
   async deleteLesson(lessonId: number, userId: number) {
     const lesson = await this.ownLesson(lessonId, userId);
+    assertEditable(lesson.course.reviewStatus);
 
     const following = await this.prisma.lesson.findMany({
       where: { courseId: lesson.courseId, position: { gt: lesson.position } },
@@ -213,6 +314,7 @@ export class InstructorService {
   /** Swaps a lesson with the one above or below it. */
   async moveLesson(lessonId: number, userId: number, direction: 'up' | 'down') {
     const lesson = await this.ownLesson(lessonId, userId);
+    assertEditable(lesson.course.reviewStatus);
 
     const neighbour = await this.prisma.lesson.findFirst({
       where: {
@@ -246,6 +348,8 @@ export class InstructorService {
       select: {
         id: true,
         scope: true,
+        published: true,
+        reviewStatus: true,
         _count: { select: { lessons: { where: { visible: true } } } },
       },
     });
@@ -263,7 +367,7 @@ export class InstructorService {
         courseId: true,
         position: true,
         visible: true,
-        course: { select: { published: true } },
+        course: { select: { published: true, reviewStatus: true } },
       },
     });
     if (!lesson) {
@@ -285,13 +389,17 @@ export class InstructorService {
   }
 
   /** Reads the role from the database (not the token), so a demoted admin is stopped at once. */
-  private async assertAdmin(userId: number) {
+  private async isAdmin(userId: number): Promise<boolean> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { role: true },
     });
-    if (user?.role !== 'ADMIN') {
-      throw new ForbiddenException("Only admins can change where a course appears.");
+    return user?.role === 'ADMIN';
+  }
+
+  private async assertAdmin(userId: number) {
+    if (!(await this.isAdmin(userId))) {
+      throw new ForbiddenException('Only admins can change where a course appears.');
     }
   }
 

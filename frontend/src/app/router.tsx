@@ -1,5 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { AdminUsersPage } from '../features/admin/AdminUsersPage'
+import { ReviewDetailPage } from '../features/admin/ReviewDetailPage'
+import { ReviewQueuePage } from '../features/admin/ReviewQueuePage'
 import { AssessmentPage } from '../features/assessments/AssessmentPage'
 import { AssessmentResultPage } from '../features/assessments/AssessmentResultPage'
 import { AssessmentsPage } from '../features/assessments/AssessmentsPage'
@@ -83,7 +85,11 @@ export const router = createBrowserRouter([
       },
       {
         element: <RequireAuth role="ADMIN" />,
-        children: [{ path: 'admin', element: <AdminUsersPage /> }],
+        children: [
+          { path: 'admin', element: <AdminUsersPage /> },
+          { path: 'admin/reviews', element: <ReviewQueuePage /> },
+          { path: 'admin/reviews/:id', element: <ReviewDetailPage /> },
+        ],
       },
       { path: '*', element: <NotFoundPage /> },
     ],

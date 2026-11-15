@@ -13,7 +13,7 @@ import type { AuthenticatedRequest } from './auth.types';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CheckResetTokenDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { RESET_REQUESTED_MESSAGE } from './password-reset';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
@@ -42,6 +42,14 @@ export class AuthController {
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     void this.auth.requestPasswordReset(dto.email);
     return { message: RESET_REQUESTED_MESSAGE };
+  }
+
+  /** Lets the reset page tell a dead link from a good one before asking for a password. */
+  @Post('reset-password/check')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async checkResetLink(@Body() dto: CheckResetTokenDto) {
+    return { valid: await this.auth.isResetLinkUsable(dto.token) };
   }
 
   @Post('reset-password')
