@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { getCurrentUser, loginAccount, registerAccount } from '../../api/auth'
-import { ApiError, setAuthToken } from '../../api/client'
+import { ApiError, setAuthToken, setSessionEndedHandler } from '../../api/client'
 import type { AuthSession, RegisterInput, User } from '../../types/api'
 import { AuthContext, type AuthContextValue, type AuthStatus } from './auth-context'
 
@@ -81,6 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setStatus('signedOut')
   }, [])
+
+  // If the server stops accepting our token (the password was reset elsewhere), sign out here too.
+  // The protected pages then send the person to the sign-in page and bring them back afterwards.
+  useEffect(() => {
+    setSessionEndedHandler(logout)
+    return () => setSessionEndedHandler(null)
+  }, [logout])
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, status, login, register, logout }),

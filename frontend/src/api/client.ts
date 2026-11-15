@@ -18,6 +18,21 @@ export function setAuthToken(token: string | null) {
   authToken = token
 }
 
+let onSessionEnded: (() => void) | null = null
+
+/**
+ * Called when the server rejects the sign-in token we sent, for example after the password was
+ * reset somewhere else. The app uses it to send the person back to the sign-in page.
+ */
+export function setSessionEndedHandler(handler: (() => void) | null) {
+  onSessionEnded = handler
+}
+
+/** A 401 for a request that carried a token means the session is over. (A wrong password carries no token.) */
+function checkSessionEnded(status: number) {
+  if (status === 401 && authToken !== null) onSessionEnded?.()
+}
+
 interface RequestOptions {
   body?: unknown
   signal?: AbortSignal
@@ -53,6 +68,7 @@ async function request<T>(
   const payload: unknown = isJson ? await response.json() : await response.text()
 
   if (!response.ok) {
+    checkSessionEnded(response.status)
     throw new ApiError(response.status, readErrorMessage(payload, response.status), payload)
   }
 
@@ -69,6 +85,7 @@ async function sendForm<T>(method: string, path: string, form: FormData): Promis
   const payload: unknown = isJson ? await response.json() : await response.text()
 
   if (!response.ok) {
+    checkSessionEnded(response.status)
     throw new ApiError(response.status, readErrorMessage(payload, response.status), payload)
   }
   return payload as T
@@ -86,6 +103,7 @@ export async function downloadFile(path: string, fileName: string): Promise<void
   if (!response.ok) {
     const isJson = response.headers.get('content-type')?.includes('application/json')
     const payload: unknown = isJson ? await response.json() : await response.text()
+    checkSessionEnded(response.status)
     throw new ApiError(response.status, readErrorMessage(payload, response.status), payload)
   }
 

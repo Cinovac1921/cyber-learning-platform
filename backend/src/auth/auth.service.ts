@@ -134,7 +134,11 @@ export class AuthService {
 
     const passwordHash = await argon2.hash(password);
     await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
+      // Raising the token version signs the account out everywhere, including a thief who already had a session.
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { passwordHash, tokenVersion: { increment: 1 } },
+      }),
       this.prisma.passwordResetToken.deleteMany({ where: { userId: record.userId } }),
     ]);
 
@@ -149,10 +153,11 @@ export class AuthService {
     return this.toPublicUser(user);
   }
 
-  private async createSession(user: PublicUser) {
+  private async createSession(user: PublicUser & { tokenVersion: number }) {
     const accessToken = await this.jwt.signAsync({
       sub: user.id,
       role: user.role,
+      ver: user.tokenVersion,
     });
     return { accessToken, user: this.toPublicUser(user) };
   }

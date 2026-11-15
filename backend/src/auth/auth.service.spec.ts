@@ -26,12 +26,13 @@ function makeService(opts: { user?: unknown; recent?: unknown; tokenRecord?: unk
     $transaction: jest.fn((operations: Promise<unknown>[]) => Promise.all(operations)),
   };
   const mail = { appUrl: 'http://localhost:5173', send: jest.fn().mockResolvedValue(undefined) };
+  const jwt = { signAsync: jest.fn().mockResolvedValue('signed-token') };
   const service = new AuthService(
     prisma as unknown as PrismaService,
-    {} as JwtService,
+    jwt as unknown as JwtService,
     mail as unknown as MailService,
   );
-  return { service, prisma, mail };
+  return { service, prisma, mail, jwt };
 }
 
 const sam = { id: 7, email: 'sam@example.com' };
@@ -135,5 +136,26 @@ describe('AuthService.resetPassword', () => {
     expect(saved.data.passwordHash).not.toContain('a-brand-new-password');
     await expect(argon2.verify(saved.data.passwordHash, 'a-brand-new-password')).resolves.toBe(true);
     expect(prisma.passwordResetToken.deleteMany).toHaveBeenLastCalledWith({ where: { userId: 7 } });
+  });
+
+  it('signs the account out everywhere by raising its token version', async () => {
+    const { service, prisma } = makeService({ tokenRecord: { id: 5, userId: 7 } });
+    await service.resetPassword(token, 'a-brand-new-password');
+    expect(prisma.user.update.mock.calls[0][0].data.tokenVersion).toEqual({ increment: 1 });
+  });
+});
+
+describe('AuthService.login: session tokens', () => {
+  it("puts the account's token version in the token, and keeps secrets out of the answer", async () => {
+    const passwordHash = await argon2.hash('correct-horse-battery');
+    const { service, jwt } = makeService({
+      user: { id: 7, email: 'sam@example.com', displayName: 'Sam', role: 'STUDENT', passwordHash, tokenVersion: 3 },
+    });
+
+    const session = await service.login({ email: 'Sam@Example.com', password: 'correct-horse-battery' });
+
+    expect(jwt.signAsync).toHaveBeenCalledWith({ sub: 7, role: 'STUDENT', ver: 3 });
+    expect(session.accessToken).toBe('signed-token');
+    expect(session.user).toEqual({ id: 7, email: 'sam@example.com', displayName: 'Sam', role: 'STUDENT' });
   });
 });

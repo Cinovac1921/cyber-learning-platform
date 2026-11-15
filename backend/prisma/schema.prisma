@@ -48,6 +48,8 @@ model User {
   passwordHash String
   displayName  String
   role         Role     @default(STUDENT)
+  /// Login tokens carry the number they were issued under. Raising it signs the account out everywhere.
+  tokenVersion Int      @default(0)
   courses      Course[]
   progress     LessonProgress[]
   attempts     Attempt[]
