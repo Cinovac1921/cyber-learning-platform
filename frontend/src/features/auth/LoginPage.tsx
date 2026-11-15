@@ -1,20 +1,18 @@
 import { useState, type SyntheticEvent } from 'react'
-import { Link, Navigate, useLocation } from 'react-router'
+import { Link, Navigate } from 'react-router'
 import { ApiError } from '../../api/client'
 import { PageHeader } from '../../components/PageHeader'
-import { destinationFor } from './roles'
 import { useAuth } from './useAuth'
 
 export function LoginPage() {
-  const { status, user, login } = useAuth()
-  const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  const { status, login } = useAuth()
 
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // Signing in always lands on the dashboard, whoever signed in and wherever they were before.
   if (status === 'signedIn') {
-    return <Navigate to={destinationFor(from, user?.role)} replace />
+    return <Navigate to="/" replace />
   }
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {

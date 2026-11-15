@@ -25,6 +25,12 @@ export class AdminReviewsController {
     return this.reviews.list();
   }
 
+  /** Declared before `:id`, so "pending-count" is not read as a course id. */
+  @Get('pending-count')
+  pendingCount() {
+    return this.reviews.pendingCount();
+  }
+
   @Get(':id')
   detail(@Param('id', ParseIntPipe) id: number) {
     return this.reviews.detail(id);

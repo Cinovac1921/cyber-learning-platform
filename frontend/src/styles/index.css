@@ -2511,3 +2511,112 @@ a {
 .review-option--correct {
   font-weight: 600;
 }
+
+/* Review count on the admin tab */
+.subnav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Notification bell */
+.bell {
+  position: relative;
+}
+
+.bell__button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.bell__button:hover,
+.bell__button[aria-expanded='true'] {
+  background: var(--hover);
+}
+
+.bell__badge {
+  position: absolute;
+  top: 0.1rem;
+  right: 0.05rem;
+  min-width: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+  text-align: center;
+}
+
+.bell__panel {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  z-index: 40;
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: 28rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: 0 18px 40px rgb(30 10 80 / 0.18);
+}
+
+.bell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.bell__empty {
+  margin: 0;
+  padding: 1.25rem 1rem;
+  color: var(--ink-soft);
+}
+
+.bell__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bell__item {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bell__item:hover {
+  background: var(--hover);
+}
+
+.bell__item--unread {
+  font-weight: 600;
+  border-left: 4px solid var(--accent);
+}
+
+.bell__time {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 400;
+}

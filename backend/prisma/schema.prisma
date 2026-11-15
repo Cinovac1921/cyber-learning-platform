@@ -31,6 +31,13 @@ enum ReviewStatus {
   REJECTED
 }
 
+enum NotificationType {
+  COURSE_SUBMITTED
+  COURSE_APPROVED
+  COURSE_REJECTED
+  COURSE_TAKEN_DOWN
+}
+
 enum CourseLevel {
   BEGINNER
   INTERMEDIATE
@@ -68,6 +75,7 @@ model User {
   classrooms   Classroom[]
   memberships  ClassroomMember[]
   passwordResetTokens PasswordResetToken[]
+  notifications Notification[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -104,6 +112,23 @@ model Course {
   @@index([reviewStatus])
   @@index([reviewedById])
   @@map("courses")
+}
+
+/// Something a person should know about, such as their course being approved. It belongs to one person only.
+model Notification {
+  id        Int              @id @default(autoincrement())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  type      NotificationType
+  message   String           @db.VarChar(500)
+  /// Where clicking it goes, inside the app.
+  link      String           @db.VarChar(200)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
 }
 
 /// A one-time link that lets someone choose a new password. Only a hash of the token is stored,

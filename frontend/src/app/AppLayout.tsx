@@ -4,6 +4,7 @@ import { Brand } from '../components/Brand'
 import { ChartIcon, HomeIcon, PlayIcon, TrophyIcon, WrenchIcon } from '../components/Icons'
 import { canTeach, ROLE_LABEL } from '../features/auth/roles'
 import { useAuth } from '../features/auth/useAuth'
+import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
 import { useBackendStatus, type BackendStatus } from './useBackendStatus'
 
@@ -57,6 +58,7 @@ export function AppLayout() {
           <ThemeToggle />
           {user && (
             <>
+              <NotificationBell />
               <div className="topbar__profile">
                 <span className="avatar" aria-hidden="true">
                   {user.displayName.trim().charAt(0).toUpperCase() || '?'}

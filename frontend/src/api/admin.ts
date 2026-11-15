@@ -31,3 +31,8 @@ export function rejectReview(courseId: number, note: string) {
 export function takedownCourse(courseId: number, note: string) {
   return api.post<{ ok: boolean }>(`/admin/reviews/${courseId}/takedown`, { note })
 }
+
+/** How many courses are waiting for a decision, for the badge on the Review queue tab. */
+export function getPendingReviewCount(signal?: AbortSignal) {
+  return api.get<{ pending: number }>('/admin/reviews/pending-count', { signal })
+}

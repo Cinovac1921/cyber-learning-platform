@@ -9,6 +9,7 @@ import { CoursesModule } from './courses/courses.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { HealthModule } from './health/health.module';
 import { InstructorModule } from './instructor/instructor.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuthModule,
     AdminModule,
     ClassroomsModule,
+    NotificationsModule,
     CoursesModule,
     AssessmentsModule,
     ChallengesModule,

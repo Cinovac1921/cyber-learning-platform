@@ -5,6 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { notifyAdmins } from '../notifications/notify';
+import { submittedMessage } from '../notifications/notification-texts';
 import { PrismaService } from '../prisma/prisma.service';
 import { assertEditable } from './course-lock';
 import { CreateCourseDto, type CourseScopeValue, UpdateCourseDto } from './dto/course.dto';
@@ -185,7 +187,8 @@ export class InstructorService {
     }
 
     const now = new Date();
-    const admin = await this.isAdmin(userId);
+    const account = await this.accountOf(userId);
+    const admin = account?.role === 'ADMIN';
     const data = admin
       ? {
           reviewStatus: 'APPROVED' as const,
@@ -203,14 +206,24 @@ export class InstructorService {
           reviewNote: null,
         };
 
-    // One database step that only succeeds from a draft or a rejection, so two clicks can't both win.
-    const result = await this.prisma.course.updateMany({
-      where: { id: courseId, authorId: userId, scope: 'PUBLIC', reviewStatus: { in: ['NONE', 'REJECTED'] } },
-      data,
+    await this.prisma.$transaction(async (tx) => {
+      // One database step that only succeeds from a draft or a rejection, so two clicks can't both win.
+      const result = await tx.course.updateMany({
+        where: { id: courseId, authorId: userId, scope: 'PUBLIC', reviewStatus: { in: ['NONE', 'REJECTED'] } },
+        data,
+      });
+      if (result.count !== 1) {
+        throw new ConflictException('This course changed while you were submitting it. Reload and try again.');
+      }
+      // The admins are told in the same step, so a submission can't go unnoticed.
+      if (!admin) {
+        await notifyAdmins(tx, {
+          type: 'COURSE_SUBMITTED',
+          message: submittedMessage(account?.displayName ?? 'An instructor', course.title),
+          link: `/admin/reviews/${courseId}`,
+        });
+      }
     });
-    if (result.count !== 1) {
-      throw new ConflictException('This course changed while you were submitting it. Reload and try again.');
-    }
     return { reviewStatus: data.reviewStatus };
   }
 
@@ -218,13 +231,19 @@ export class InstructorService {
   async withdraw(courseId: number, userId: number) {
     await this.ownCourse(courseId, userId);
 
-    const result = await this.prisma.course.updateMany({
-      where: { id: courseId, authorId: userId, scope: 'PUBLIC', reviewStatus: { in: ['PENDING', 'APPROVED'] } },
-      data: { reviewStatus: 'NONE', published: false, reviewNote: null },
+    await this.prisma.$transaction(async (tx) => {
+      const result = await tx.course.updateMany({
+        where: { id: courseId, authorId: userId, scope: 'PUBLIC', reviewStatus: { in: ['PENDING', 'APPROVED'] } },
+        data: { reviewStatus: 'NONE', published: false, reviewNote: null },
+      });
+      if (result.count !== 1) {
+        throw new BadRequestException("This course isn't waiting for review or live, so there is nothing to withdraw.");
+      }
+      // The admins' "submitted" notice would now lead to a course that is no longer in review.
+      await tx.notification.deleteMany({
+        where: { type: 'COURSE_SUBMITTED', readAt: null, link: `/admin/reviews/${courseId}` },
+      });
     });
-    if (result.count !== 1) {
-      throw new BadRequestException("This course isn't waiting for review or live, so there is nothing to withdraw.");
-    }
     return { ok: true };
   }
 
@@ -348,6 +367,7 @@ export class InstructorService {
       select: {
         id: true,
         scope: true,
+        title: true,
         published: true,
         reviewStatus: true,
         _count: { select: { lessons: { where: { visible: true } } } },
@@ -389,16 +409,16 @@ export class InstructorService {
   }
 
   /** Reads the role from the database (not the token), so a demoted admin is stopped at once. */
-  private async isAdmin(userId: number): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
+  /** The role and name of an account, read from the database. */
+  private accountOf(userId: number) {
+    return this.prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true },
+      select: { role: true, displayName: true },
     });
-    return user?.role === 'ADMIN';
   }
 
   private async assertAdmin(userId: number) {
-    if (!(await this.isAdmin(userId))) {
+    if ((await this.accountOf(userId))?.role !== 'ADMIN') {
       throw new ForbiddenException('Only admins can change where a course appears.');
     }
   }

@@ -26,6 +26,7 @@ function makeService(opts: Options = {}) {
     course: {
       findFirst: jest.fn().mockResolvedValue({
         id: 1,
+        title: 'Intro to SOC work',
         scope: opts.course?.scope ?? 'PUBLIC',
         published: opts.course?.published ?? false,
         reviewStatus: opts.course?.reviewStatus ?? 'NONE',
@@ -37,7 +38,14 @@ function makeService(opts: Options = {}) {
       delete: jest.fn().mockResolvedValue({}),
       findUnique: jest.fn().mockResolvedValue(null),
     },
-    user: { findUnique: jest.fn().mockResolvedValue({ role: opts.role ?? 'INSTRUCTOR' }) },
+    user: {
+      findUnique: jest.fn().mockResolvedValue({ role: opts.role ?? 'INSTRUCTOR', displayName: 'Ms. Reyes' }),
+      findMany: jest.fn().mockResolvedValue([{ id: 90 }, { id: 91 }]),
+    },
+    notification: {
+      createMany: jest.fn().mockResolvedValue({}),
+      deleteMany: jest.fn().mockResolvedValue({}),
+    },
     classroom: {
       findFirst: jest.fn().mockResolvedValue(opts.ownsClassroom === false ? null : { id: 3 }),
     },
@@ -58,8 +66,12 @@ function makeService(opts: Options = {}) {
       create: jest.fn().mockResolvedValue({ id: 9, position: 3 }),
       delete: jest.fn().mockResolvedValue({}),
     },
-    $transaction: jest.fn((operations: Promise<unknown>[]) => Promise.all(operations)),
+    $transaction: jest.fn(),
   };
+  // A transaction either runs the steps it is given, or hands its steps this same client.
+  prisma.$transaction.mockImplementation((work: unknown) =>
+    typeof work === 'function' ? (work as (tx: unknown) => unknown)(prisma) : Promise.all(work as Promise<unknown>[]),
+  );
   return { service: new InstructorService(prisma as unknown as PrismaService), prisma };
 }
 
@@ -249,6 +261,31 @@ describe('InstructorService.submitForReview', () => {
     expect(call.data.submittedAt).toBeInstanceOf(Date);
   });
 
+  it('tells every admin in the same step, with a link to the review', async () => {
+    const { service, prisma } = makeService({ role: 'INSTRUCTOR' });
+    await service.submitForReview(1, 7);
+
+    const { data } = prisma.notification.createMany.mock.calls[0][0] as {
+      data: { userId: number; type: string; message: string; link: string }[];
+    };
+    expect(data.map((row) => row.userId)).toEqual([90, 91]);
+    expect(data[0]).toMatchObject({ type: 'COURSE_SUBMITTED', link: '/admin/reviews/1' });
+    expect(data[0].message).toContain('Ms. Reyes');
+    expect(data[0].message).toContain('Intro to SOC work');
+  });
+
+  it('does not notify anyone when an admin publishes their own course', async () => {
+    const { service, prisma } = makeService({ role: 'ADMIN' });
+    await service.submitForReview(1, 7);
+    expect(prisma.notification.createMany).not.toHaveBeenCalled();
+  });
+
+  it('notifies nobody if the submission did not go through', async () => {
+    const { service, prisma } = makeService({ updated: 0 });
+    await expect(service.submitForReview(1, 7)).rejects.toBeInstanceOf(ConflictException);
+    expect(prisma.notification.createMany).not.toHaveBeenCalled();
+  });
+
   it('goes live straight away for an admin, who is the reviewer', async () => {
     const { service, prisma } = makeService({ role: 'ADMIN' });
     await expect(service.submitForReview(1, 7)).resolves.toEqual({ reviewStatus: 'APPROVED' });
@@ -304,8 +341,17 @@ describe('InstructorService.withdraw', () => {
     });
   });
 
+  it('removes the admins\' unread "submitted" notices, which would now lead nowhere', async () => {
+    const { service, prisma } = makeService({ course: { reviewStatus: 'PENDING' } });
+    await service.withdraw(1, 7);
+    expect(prisma.notification.deleteMany).toHaveBeenCalledWith({
+      where: { type: 'COURSE_SUBMITTED', readAt: null, link: '/admin/reviews/1' },
+    });
+  });
+
   it('has nothing to do for a course that is neither pending nor live', async () => {
-    const { service } = makeService({ updated: 0 });
+    const { service, prisma } = makeService({ updated: 0 });
     await expect(service.withdraw(1, 7)).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.notification.deleteMany).not.toHaveBeenCalled();
   });
 });

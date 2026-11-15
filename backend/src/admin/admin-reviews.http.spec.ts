@@ -17,6 +17,7 @@ describe('Course review over HTTP', () => {
   let server: Server;
   const reviews = {
     list: jest.fn().mockResolvedValue({ pending: [], live: [] }),
+    pendingCount: jest.fn().mockResolvedValue({ pending: 3 }),
     detail: jest.fn(),
     approve: jest.fn().mockResolvedValue({ ok: true }),
     reject: jest.fn().mockResolvedValue({ ok: true }),
@@ -48,6 +49,13 @@ describe('Course review over HTTP', () => {
   });
 
   afterEach(() => app.close());
+
+  it('serves the pending count, and does not mistake it for a course id', async () => {
+    const response = await request(server).get('/admin/reviews/pending-count').expect(200);
+    expect(response.body).toEqual({ pending: 3 });
+    expect(reviews.pendingCount).toHaveBeenCalled();
+    expect(reviews.detail).not.toHaveBeenCalled();
+  });
 
   it('records the signed-in admin as the one who decided', async () => {
     await request(server).post('/admin/reviews/3/approve').expect(200);

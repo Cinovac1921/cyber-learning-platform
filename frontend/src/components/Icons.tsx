@@ -177,3 +177,10 @@ export const ShieldIcon = (props: IconProps) => (
     <path d="M10 10.500V9a2 2 0 0 1 4 0v1.500" />
   </Icon>
 )
+
+export const BellIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9" />
+    <path d="M10 20a2.2 2.2 0 0 0 4 0" />
+  </Icon>
+)
