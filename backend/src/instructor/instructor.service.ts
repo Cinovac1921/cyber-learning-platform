@@ -59,6 +59,13 @@ export class InstructorService {
     const summary = clean(dto.summary, 'Summary');
     const slug = await this.uniqueSlug(slugify(title));
 
+    if (dto.scope === 'TEMPLATE') {
+      if (dto.classroomId !== undefined) {
+        throw new BadRequestException('A template is not made for a classroom.');
+      }
+      await this.assertAdmin(userId);
+    }
+
     // A course made for a classroom belongs to it from the start and stays private to it.
     const classroomId =
       dto.classroomId === undefined ? null : await this.ownClassroomId(dto.classroomId, userId);
@@ -71,6 +78,7 @@ export class InstructorService {
         level: dto.level,
         authorId: userId,
         ...(classroomId === null ? {} : { scope: 'CLASSROOM' as const, classroomId }),
+        ...(dto.scope === 'TEMPLATE' ? { scope: 'TEMPLATE' as const } : {}),
       },
       select: { id: true, slug: true },
     });
@@ -90,6 +98,7 @@ export class InstructorService {
         scope: true,
         reviewStatus: true,
         reviewNote: true,
+        copiedFrom: { select: { title: true } },
         classroom: { select: { id: true, name: true } },
         lessons: {
           orderBy: { position: 'asc' },

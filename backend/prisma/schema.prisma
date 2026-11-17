@@ -102,6 +102,10 @@ model Course {
   reviewedAt   DateTime?
   reviewer     User?        @relation("CourseReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedById Int?
+  /// Set when the course was made by copying another one from the library.
+  copiedFrom   Course?      @relation("CourseCopies", fields: [copiedFromId], references: [id], onDelete: SetNull)
+  copiedFromId Int?
+  copies       Course[]     @relation("CourseCopies")
   lessons   Lesson[]
   assessments Assessment[]
   createdAt DateTime    @default(now())
@@ -111,6 +115,7 @@ model Course {
   @@index([classroomId])
   @@index([reviewStatus])
   @@index([reviewedById])
+  @@index([copiedFromId])
   @@map("courses")
 }
 

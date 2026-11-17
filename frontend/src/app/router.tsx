@@ -20,6 +20,8 @@ import { InstructorPage } from '../features/instructor/InstructorPage'
 import { AssessmentEditorPage } from '../features/instructor/AssessmentEditorPage'
 import { ChallengeEditorPage } from '../features/instructor/ChallengeEditorPage'
 import { ClassroomManagePage } from '../features/instructor/ClassroomManagePage'
+import { LibraryCoursePage } from '../features/instructor/LibraryCoursePage'
+import { LibraryPage } from '../features/instructor/LibraryPage'
 import { CourseEditorPage } from '../features/instructor/CourseEditorPage'
 import { InstructorChallengesPage } from '../features/instructor/InstructorChallengesPage'
 import { LessonEditorPage } from '../features/instructor/LessonEditorPage'
@@ -70,6 +72,8 @@ export const router = createBrowserRouter([
         element: <RequireAuth role={['INSTRUCTOR', 'ADMIN']} />,
         children: [
           { path: 'instructor', element: <InstructorPage /> },
+          { path: 'instructor/library', element: <LibraryPage /> },
+          { path: 'instructor/library/:id', element: <LibraryCoursePage /> },
           { path: 'instructor/classrooms/new', element: <NewClassroomPage /> },
           { path: 'instructor/classrooms/:id', element: <ClassroomManagePage /> },
           { path: 'instructor/challenges', element: <InstructorChallengesPage /> },

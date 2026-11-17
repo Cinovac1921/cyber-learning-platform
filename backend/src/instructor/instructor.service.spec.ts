@@ -233,6 +233,27 @@ describe('InstructorService.createCourse', () => {
     expect(prisma.course.create).not.toHaveBeenCalled();
   });
 
+  it('lets an admin start a template', async () => {
+    const { service, prisma } = makeService({ role: 'ADMIN' });
+    await service.createCourse(7, { ...dto, scope: 'TEMPLATE' });
+    expect(prisma.course.create.mock.calls[0][0].data).toMatchObject({ scope: 'TEMPLATE', authorId: 7 });
+    expect(prisma.course.create.mock.calls[0][0].data.classroomId).toBeUndefined();
+  });
+
+  it('does not let an instructor start a template', async () => {
+    const { service, prisma } = makeService({ role: 'INSTRUCTOR' });
+    await expect(service.createCourse(7, { ...dto, scope: 'TEMPLATE' })).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.course.create).not.toHaveBeenCalled();
+  });
+
+  it('does not make a template for a classroom', async () => {
+    const { service, prisma } = makeService({ role: 'ADMIN' });
+    await expect(service.createCourse(7, { ...dto, scope: 'TEMPLATE', classroomId: 3 })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(prisma.course.create).not.toHaveBeenCalled();
+  });
+
   it('starts a public-library course as an unreviewed draft', async () => {
     const { service, prisma } = makeService();
     await service.createCourse(7, dto);

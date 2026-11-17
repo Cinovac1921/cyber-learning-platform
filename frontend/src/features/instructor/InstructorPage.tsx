@@ -19,6 +19,9 @@ export function InstructorPage() {
         description="Create and manage your courses and lessons."
         actions={
           <>
+            <Link to="/instructor/library" className="button button--quiet">
+              Library
+            </Link>
             <Link to="/instructor/challenges" className="button button--quiet">
               Challenges
             </Link>

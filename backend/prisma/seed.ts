@@ -111,6 +111,78 @@ interface SeedAssessment {
   questions: SeedQuestion[];
 }
 
+/** Starter courses for instructors to copy from. They are templates: students never see them. */
+const templateCourses: {
+  title: string;
+  slug: string;
+  summary: string;
+  lessons: { title: string; content: string }[];
+  quiz: SeedAssessment;
+}[] = [
+  {
+    title: 'Starter: Spotting phishing emails',
+    slug: 'starter-spotting-phishing-emails',
+    summary: 'A ready-made short unit on recognising phishing emails and what to do about them.',
+    lessons: [
+      {
+        title: 'What phishing is',
+        content:
+          'Phishing is a message that pretends to come from someone you trust, so you click a link, open a file or hand over a password.\n\nIt works because it targets people, not software. A perfect firewall does not help when a user types their password into a fake page.',
+      },
+      {
+        title: 'Signs of a phishing email',
+        content:
+          'Check the sender address, not just the display name. Look for urgency ("act in 24 hours"), unexpected attachments, and links whose real address differs from the text you see.\n\nHover over a link before you click it. If the domain looks almost right but not quite, treat it as hostile.',
+      },
+      {
+        title: 'What to do about it',
+        content:
+          'Do not click, reply or forward the message to colleagues. Report it using your organisation\'s process, such as the security team or a report button.\n\nIf you already clicked or entered a password, say so straight away. Speed matters far more than embarrassment.',
+      },
+    ],
+    quiz: {
+      title: 'Phishing check',
+      description: 'Three quick questions on recognising and reporting phishing.',
+      passPercent: 70,
+      questions: [
+        {
+          prompt: 'Which detail is the strongest sign of a phishing email?',
+          explanation: 'A sender domain that is almost, but not exactly, the real one is a classic trick. Display names are easy to fake.',
+          options: [
+            'The sender domain is slightly different from the real company domain',
+            'The email has a company logo',
+            'The email was sent in the morning',
+            'The email is addressed to you by name',
+          ],
+          answer: 0,
+        },
+        {
+          prompt: 'You receive an unexpected invoice with a link. What should you do first?',
+          explanation: 'Do not click. Check the sender and report the message, so the security team can protect everyone.',
+          options: [
+            'Click the link to see what it is',
+            'Forward it to your team to ask what they think',
+            'Do not click, and report it using your organisation\'s process',
+            'Reply and ask them to confirm it is real',
+          ],
+          answer: 2,
+        },
+        {
+          prompt: 'You entered your password on a page you now think was fake. What is the best move?',
+          explanation: 'Reporting quickly lets the team reset your password and look for damage before it spreads.',
+          options: [
+            'Wait and see if anything happens',
+            'Tell the security team immediately and change your password',
+            'Delete the email and say nothing',
+            'Clear your browser history',
+          ],
+          answer: 1,
+        },
+      ],
+    },
+  },
+];
+
 /** One quiz per course, keyed by the course slug. */
 const assessments: Record<string, SeedAssessment> = {
   'web-security-basics': {
@@ -376,6 +448,57 @@ async function main() {
       },
     });
     console.log(`  Seeded assessment "${quiz.title}" (${quiz.questions.length} questions)`);
+  }
+
+  // Starter material for instructors to copy into their classrooms. Created once and then left alone.
+  for (const template of templateCourses) {
+    const existing = await prisma.course.findUnique({ where: { slug: template.slug }, select: { id: true } });
+    if (existing) {
+      console.log(`Template "${template.title}" already exists, left as it is`);
+      continue;
+    }
+
+    await prisma.course.create({
+      data: {
+        title: template.title,
+        slug: template.slug,
+        summary: template.summary,
+        level: 'BEGINNER',
+        scope: 'TEMPLATE',
+        published: true,
+        authorId: author.id,
+        lessons: {
+          create: template.lessons.map((lesson, index) => ({
+            position: index + 1,
+            title: lesson.title,
+            content: lesson.content,
+          })),
+        },
+        assessments: {
+          create: {
+            title: template.quiz.title,
+            description: template.quiz.description,
+            passPercent: template.quiz.passPercent,
+            published: true,
+            questions: {
+              create: template.quiz.questions.map((question, index) => ({
+                position: index + 1,
+                prompt: question.prompt,
+                explanation: question.explanation,
+                options: {
+                  create: question.options.map((text, optionIndex) => ({
+                    position: optionIndex + 1,
+                    text,
+                    isCorrect: optionIndex === question.answer,
+                  })),
+                },
+              })),
+            },
+          },
+        },
+      },
+    });
+    console.log(`Seeded template "${template.title}" (${template.lessons.length} lessons, 1 quiz)`);
   }
 
   // Created once and then left alone, so an instructor's edits and flags are not overwritten.

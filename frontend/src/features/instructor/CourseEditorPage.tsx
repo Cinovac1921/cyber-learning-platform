@@ -66,8 +66,19 @@ export function CourseEditorPage() {
     return <ErrorNotice error={course.error} />
   }
 
-  const { title, slug, summary, level, published, scope, reviewStatus, reviewNote, classroom, lessons } =
-    course.data
+  const {
+    title,
+    slug,
+    summary,
+    level,
+    published,
+    scope,
+    reviewStatus,
+    reviewNote,
+    copiedFrom,
+    classroom,
+    lessons,
+  } = course.data
   const details: CourseInput = { title, summary, level }
   const isPublic = scope === 'PUBLIC'
   const isAdmin = user?.role === 'ADMIN'
@@ -147,6 +158,7 @@ export function CourseEditorPage() {
           <CourseStatusChip scope={scope} published={published} reviewStatus={reviewStatus} />
           {scope === 'TEMPLATE' && <span className="chip">Template</span>}
           {scope === 'CLASSROOM' && classroom && <span className="chip">{classroom.name}</span>}
+          {copiedFrom && <span className="chip">Based on {copiedFrom.title}</span>}
           <span className="course-card__meta">
             {scope === 'TEMPLATE'
               ? 'This is a template. Students never see it, whether or not it is published.'
@@ -210,9 +222,14 @@ export function CourseEditorPage() {
         <div className="editor__heading">
           <h2>Lessons</h2>
           {!locked && (
-            <Link to={`/instructor/courses/${courseId}/lessons/new`} className="button button--small">
-              + Add lesson
-            </Link>
+            <span className="row-actions">
+              <Link to={`/instructor/library?target=${courseId}`} className="button button--quiet button--small">
+                Copy from library
+              </Link>
+              <Link to={`/instructor/courses/${courseId}/lessons/new`} className="button button--small">
+                + Add lesson
+              </Link>
+            </span>
           )}
         </div>
 

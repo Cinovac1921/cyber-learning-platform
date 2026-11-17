@@ -39,6 +39,8 @@ export interface InstructorCourse {
   reviewStatus: ReviewStatus
   /** The admin's reason, when the course was rejected or taken down. */
   reviewNote: string | null
+  /** Set when the course was made by copying one from the library. */
+  copiedFrom: { title: string } | null
   classroom: { id: number; name: string } | null
   lessons: InstructorLesson[]
 }
@@ -49,6 +51,8 @@ export interface CourseInput {
   level: CourseLevel
   /** Create the course inside one of the instructor's classrooms. Leave out for the public library. */
   classroomId?: number
+  /** Admins only: start the course as a template for instructors to copy from. */
+  scope?: 'TEMPLATE'
 }
 
 export interface LessonInput {

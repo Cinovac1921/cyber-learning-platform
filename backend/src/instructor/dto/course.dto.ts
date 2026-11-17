@@ -25,6 +25,11 @@ export class CreateCourseDto {
   @IsInt()
   @Min(1)
   classroomId?: number;
+
+  /** Admins only: start the course as a template for instructors to copy from. */
+  @IsOptional()
+  @IsIn(['TEMPLATE'])
+  scope?: 'TEMPLATE';
 }
 
 export class UpdateCourseDto {
