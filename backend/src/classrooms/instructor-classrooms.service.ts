@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { VISIBLE_LESSON } from '../courses/visibility';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildProgress } from './classroom-progress';
 import { CreateClassroomDto, UpdateClassroomDto } from './dto/classroom.dto';
 import { formatJoinCode, generateJoinCode } from './join-code';
 
@@ -97,6 +99,88 @@ export class InstructorClassroomsService {
         ...course,
         lessonCount: _count.lessons,
       })),
+    };
+  }
+
+  /**
+   * How every student of this classroom is doing in this classroom's own courses and quizzes. Nothing
+   * about what a student does elsewhere is included, and only the instructor who runs the classroom can ask.
+   */
+  async progress(classroomId: number, userId: number) {
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, ownerId: userId },
+      select: { id: true, name: true },
+    });
+    if (!classroom) {
+      throw new NotFoundException('Classroom not found.');
+    }
+
+    const [members, courseRows] = await Promise.all([
+      this.prisma.classroomMember.findMany({
+        where: { classroomId },
+        orderBy: { joinedAt: 'asc' },
+        select: { joinedAt: true, user: { select: { id: true, displayName: true, email: true } } },
+      }),
+      // Only published courses count, because those are the ones students can see.
+      this.prisma.course.findMany({
+        where: { classroomId, published: true },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          title: true,
+          _count: { select: { lessons: { where: VISIBLE_LESSON } } },
+          assessments: {
+            where: { published: true },
+            orderBy: { createdAt: 'asc' },
+            select: { id: true, title: true, passPercent: true },
+          },
+        },
+      }),
+    ]);
+
+    const courses = courseRows.map((course) => ({ id: course.id, title: course.title, lessonCount: course._count.lessons }));
+    const quizzes = courseRows.flatMap((course) =>
+      course.assessments.map((quiz) => ({ ...quiz, courseId: course.id })),
+    );
+    const memberIds = members.map((member) => member.user.id);
+
+    const [lessonRows, attemptRows] =
+      memberIds.length === 0 || courses.length === 0
+        ? [[], []]
+        : await Promise.all([
+            this.prisma.lessonProgress.findMany({
+              where: {
+                userId: { in: memberIds },
+                lesson: { ...VISIBLE_LESSON, courseId: { in: courses.map((course) => course.id) } },
+              },
+              select: { userId: true, completedAt: true, lesson: { select: { courseId: true } } },
+            }),
+            quizzes.length === 0
+              ? Promise.resolve([])
+              : this.prisma.attempt.findMany({
+                  where: { userId: { in: memberIds }, assessmentId: { in: quizzes.map((quiz) => quiz.id) } },
+                  select: { userId: true, assessmentId: true, percent: true, passed: true, createdAt: true },
+                }),
+          ]);
+
+    return {
+      classroom,
+      ...buildProgress({
+        courses,
+        quizzes,
+        members: members.map((member) => ({
+          userId: member.user.id,
+          displayName: member.user.displayName,
+          email: member.user.email,
+          joinedAt: member.joinedAt,
+        })),
+        lessonRows: lessonRows.map((row) => ({
+          userId: row.userId,
+          courseId: row.lesson.courseId,
+          completedAt: row.completedAt,
+        })),
+        attemptRows,
+      }),
     };
   }
 

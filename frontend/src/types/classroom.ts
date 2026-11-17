@@ -59,3 +59,19 @@ export interface ClassroomInput {
   name: string
   description: string
 }
+
+/** How a classroom's students are doing in the classroom's own courses and quizzes. */
+export interface ClassroomProgress {
+  classroom: { id: number; name: string }
+  courses: { id: number; title: string; lessonCount: number; finishedCount: number }[]
+  quizzes: { id: number; courseId: number; title: string; passPercent: number; passedCount: number }[]
+  students: {
+    userId: number
+    displayName: string
+    email: string
+    joinedAt: string
+    lastActiveAt: string | null
+    courses: { courseId: number; completedLessons: number }[]
+    quizzes: { assessmentId: number; attempts: number; bestPercent: number | null; passed: boolean }[]
+  }[]
+}

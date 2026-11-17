@@ -98,9 +98,14 @@ export function ClassroomManagePage() {
         <PageHeader
           title={name}
           actions={
-            <Link to={`/instructor/courses/new?classroomId=${classroomId}`} className="button">
-              + New course here
-            </Link>
+            <>
+              <Link to={`/instructor/classrooms/${classroomId}/progress`} className="button button--quiet">
+                View progress
+              </Link>
+              <Link to={`/instructor/courses/new?classroomId=${classroomId}`} className="button">
+                + New course here
+              </Link>
+            </>
           }
         />
         <p className="toolbar">

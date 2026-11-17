@@ -1,5 +1,6 @@
 import type {
   ClassroomInput,
+  ClassroomProgress,
   InstructorClassroom,
   InstructorClassroomSummary,
 } from '../types/classroom'
@@ -33,4 +34,8 @@ export function removeMember(classroomId: number, userId: number) {
 
 export function deleteClassroom(id: number) {
   return api.delete<Ok>(`/instructor/classrooms/${id}`)
+}
+
+export function getClassroomProgress(id: number, signal?: AbortSignal) {
+  return api.get<ClassroomProgress>(`/instructor/classrooms/${id}/progress`, { signal })
 }

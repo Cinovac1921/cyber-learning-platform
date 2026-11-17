@@ -2620,3 +2620,28 @@ a {
   font-size: 0.8rem;
   font-weight: 400;
 }
+
+/* Classroom progress table */
+.progress-table th,
+.progress-table td {
+  min-width: 9rem;
+  vertical-align: top;
+}
+
+.progress-table th[scope='row'] {
+  min-width: 12rem;
+  text-align: left;
+}
+
+.progress-table .course-card__meta {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 400;
+}
+
+.progress-table progress {
+  display: block;
+  width: 100%;
+  height: 0.6rem;
+  accent-color: var(--accent);
+}

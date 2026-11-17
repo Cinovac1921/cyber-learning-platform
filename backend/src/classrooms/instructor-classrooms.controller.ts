@@ -36,6 +36,12 @@ export class InstructorClassroomsController {
     return this.classrooms.get(id, request.user!.sub);
   }
 
+  /** How every student is doing in this classroom's courses and quizzes. */
+  @Get(':id/progress')
+  progress(@Param('id', ParseIntPipe) id: number, @Req() request: AuthenticatedRequest) {
+    return this.classrooms.progress(id, request.user!.sub);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,

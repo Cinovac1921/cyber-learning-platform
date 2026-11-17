@@ -20,6 +20,7 @@ import { InstructorPage } from '../features/instructor/InstructorPage'
 import { AssessmentEditorPage } from '../features/instructor/AssessmentEditorPage'
 import { ChallengeEditorPage } from '../features/instructor/ChallengeEditorPage'
 import { ClassroomManagePage } from '../features/instructor/ClassroomManagePage'
+import { ClassroomProgressPage } from '../features/instructor/ClassroomProgressPage'
 import { LibraryCoursePage } from '../features/instructor/LibraryCoursePage'
 import { LibraryPage } from '../features/instructor/LibraryPage'
 import { CourseEditorPage } from '../features/instructor/CourseEditorPage'
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
           { path: 'instructor/library/:id', element: <LibraryCoursePage /> },
           { path: 'instructor/classrooms/new', element: <NewClassroomPage /> },
           { path: 'instructor/classrooms/:id', element: <ClassroomManagePage /> },
+          { path: 'instructor/classrooms/:id/progress', element: <ClassroomProgressPage /> },
           { path: 'instructor/challenges', element: <InstructorChallengesPage /> },
           { path: 'instructor/challenges/new', element: <NewChallengePage /> },
           { path: 'instructor/challenges/:challengeId', element: <ChallengeEditorPage /> },
