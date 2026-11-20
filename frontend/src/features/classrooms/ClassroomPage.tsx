@@ -8,8 +8,10 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { ArrowLeftIcon } from '../../components/Icons'
 import { PageHeader } from '../../components/PageHeader'
 import { levelLabel } from '../courses/levels'
+import { useConfirm } from '../../app/useConfirm'
 
 export function ClassroomPage() {
+  const confirm = useConfirm()
   const { id = '' } = useParams()
   const classroomId = Number(id)
   const navigate = useNavigate()
@@ -36,7 +38,13 @@ export function ClassroomPage() {
   const { name, description, instructorName, courses } = classroom.data
 
   async function leave() {
-    if (!window.confirm(`Leave "${name}"? You can join again later with the code. Your progress is kept.`)) return
+    const ok = await confirm({
+      title: 'Leave this classroom?',
+      message: `Leave "${name}"? You can join again later with the code. Your progress is kept.`,
+      confirmLabel: 'Leave classroom',
+      danger: true,
+    })
+    if (!ok) return
     setLeaveError(null)
     try {
       await leaveClassroom(classroomId)

@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
+import { ArrowRightIcon } from '../../components/Icons'
+import { ProgressBar } from '../../components/ProgressBar'
 import type { CourseProgress } from '../../types/learning'
-import { ProgressRing } from './ProgressRing'
 
 function describeProgress(percent: number): string {
   if (percent >= 100) return 'Completed'
@@ -9,7 +10,7 @@ function describeProgress(percent: number): string {
   return 'In progress'
 }
 
-export function CourseCard({ course, colorIndex }: { course: CourseProgress; colorIndex: number }) {
+export function CourseCard({ course, index }: { course: CourseProgress; index: number }) {
   const percent =
     course.totalLessons === 0
       ? 0
@@ -18,19 +19,23 @@ export function CourseCard({ course, colorIndex }: { course: CourseProgress; col
 
   return (
     <article className="course-card">
-      <div className="course-card__top">
-        <ProgressRing percent={percent} color={`var(--course-${(colorIndex % 3) + 1})`} />
-        <div>
-          <h3>{course.title}</h3>
-          <p>
-            {course.completedLessons} of {course.totalLessons} lessons
-          </p>
-        </div>
+      <div className="course-card__head">
+        <span className="label">Course / {String(index + 1).padStart(3, '0')}</span>
+        <span className={percent >= 100 ? 'chip chip--live' : 'chip'}>{describeProgress(percent)}</span>
       </div>
-      <span className="chip">{describeProgress(percent)}</span>
+      <div className="course-card__top">
+        <h3>{course.title}</h3>
+        <p>
+          {course.completedLessons} of {course.totalLessons} lessons
+        </p>
+      </div>
+      <div className="course-card__progress">
+        <span className="numeral">{percent}%</span>
+        <ProgressBar done={course.completedLessons} total={course.totalLessons} />
+      </div>
       {next ? (
         <Link to={`/courses/${course.slug}/lessons/${next.position}`} className="button button--block">
-          Continue · Lesson {next.number}
+          Continue · Lesson {next.number} <ArrowRightIcon size={16} />
         </Link>
       ) : (
         <Link to="/courses" className="button button--quiet button--block">

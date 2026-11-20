@@ -15,7 +15,6 @@ import { ChallengePage } from '../features/challenges/ChallengePage'
 import { ChallengesPage } from '../features/challenges/ChallengesPage'
 import { LeaderboardPage } from '../features/challenges/LeaderboardPage'
 import { CoursesPage } from '../features/courses/CoursesPage'
-import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { InstructorPage } from '../features/instructor/InstructorPage'
 import { AssessmentEditorPage } from '../features/instructor/AssessmentEditorPage'
 import { ChallengeEditorPage } from '../features/instructor/ChallengeEditorPage'
@@ -34,6 +33,7 @@ import { CoursePage } from '../features/courses/CoursePage'
 import { LessonPage } from '../features/lessons/LessonPage'
 import { NotFoundPage } from '../features/NotFoundPage'
 import { AppLayout } from './AppLayout'
+import { HomeGate } from '../features/home/HomeGate'
 import { AuthLayout } from './AuthLayout'
 
 
@@ -49,14 +49,17 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    // Everything else: top navbar layout.
+    // The home page. Visitors see the public landing page; signed-in people see their dashboard.
     path: '/',
+    element: <HomeGate />,
+  },
+  {
+    // Everything else: sidebar layout. It has no path of its own, so "/" belongs to the home page above.
     element: <AppLayout />,
     children: [
       {
         element: <RequireAuth />,
         children: [
-          { index: true, element: <DashboardPage /> },
           { path: 'classrooms/:id', element: <ClassroomPage /> },
           { path: 'courses', element: <CoursesPage /> },
           { path: 'courses/:slug', element: <CoursePage /> },

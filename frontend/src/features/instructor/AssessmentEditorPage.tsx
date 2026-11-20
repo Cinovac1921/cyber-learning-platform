@@ -16,8 +16,10 @@ import { PageHeader } from '../../components/PageHeader'
 import type { AssessmentInput, QuestionInput } from '../../types/instructor'
 import { AssessmentForm } from './AssessmentForm'
 import { QuestionForm } from './QuestionForm'
+import { useConfirm } from '../../app/useConfirm'
 
 export function AssessmentEditorPage() {
+  const confirm = useConfirm()
   const { assessmentId = '' } = useParams()
   const id = Number(assessmentId)
   const navigate = useNavigate()
@@ -79,9 +81,13 @@ export function AssessmentEditorPage() {
   }
 
   async function removeAssessment() {
-    if (!window.confirm(`Delete "${title}"? Its questions and every student's attempts will be deleted too.`)) {
-      return
-    }
+    const ok = await confirm({
+      title: 'Delete this assessment?',
+      message: `Delete "${title}"? Its questions and every student's attempts will be deleted too.`,
+      confirmLabel: 'Delete assessment',
+      danger: true,
+    })
+    if (!ok) return
     setActionError(null)
     try {
       await deleteAssessment(id)
@@ -198,10 +204,14 @@ export function AssessmentEditorPage() {
                       <button
                         type="button"
                         className="button button--danger button--small"
-                        onClick={() => {
-                          if (window.confirm(`Delete question ${question.position}?`)) {
-                            void run(() => deleteQuestion(question.id))
-                          }
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: 'Delete this question?',
+                            message: `Delete question ${question.position}?`,
+                            confirmLabel: 'Delete question',
+                            danger: true,
+                          })
+                          if (ok) void run(() => deleteQuestion(question.id))
                         }}
                       >
                         Delete

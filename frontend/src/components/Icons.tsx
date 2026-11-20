@@ -23,6 +23,12 @@ function Icon({ size = 20, children, ...rest }: IconProps & { children: ReactNod
   )
 }
 
+export const MenuIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 6h16M4 12h16M4 18h16" />
+  </Icon>
+)
+
 export const HomeIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M3 10.5 12 3l9 7.5" />

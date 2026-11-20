@@ -8,7 +8,7 @@ import { CheckIcon, TrophyIcon } from '../../components/Icons'
 import { PageHeader } from '../../components/PageHeader'
 import type { ChallengeCategory } from '../../types/challenges'
 import { DifficultyChip } from './DifficultyChip'
-import { CATEGORIES, categoryIcon, categoryLabel } from './meta'
+import { CATEGORIES, categoryLabel } from './meta'
 
 export function ChallengesPage() {
   const challenges = useResource('challenges', (signal) => listChallenges(signal))
@@ -17,6 +17,7 @@ export function ChallengesPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Laboratories"
         title="Challenges"
         description="Hands-on problems you solve to earn points. Find the flag and submit it."
         actions={
@@ -68,9 +69,7 @@ export function ChallengesPage() {
               .map((challenge) => (
                 <article key={challenge.id} className="course-card">
                   <div className="course-card__head">
-                    <span className="tile" aria-hidden="true">
-                      {categoryIcon(challenge.category)}
-                    </span>
+                    <span className="label">Lab / {String(challenges.data.indexOf(challenge) + 1).padStart(3, '0')}</span>
                     <span className="chip">{categoryLabel(challenge.category)}</span>
                   </div>
                   <h3>{challenge.title}</h3>

@@ -3,7 +3,7 @@ import { listAssessments } from '../../api/assessments'
 import { useResource } from '../../app/useResource'
 import { EmptyState } from '../../components/EmptyState'
 import { ErrorNotice } from '../../components/ErrorNotice'
-import { CheckIcon, ChartIcon, ListIcon } from '../../components/Icons'
+import { CheckIcon, ListIcon } from '../../components/Icons'
 import { PageHeader } from '../../components/PageHeader'
 
 export function AssessmentsPage() {
@@ -11,7 +11,7 @@ export function AssessmentsPage() {
 
   return (
     <>
-      <PageHeader title="Assessments" description="Quizzes and tests that check what you've learned." />
+      <PageHeader eyebrow="Examinations" title="Assessments" description="Quizzes and tests that check what you've learned." />
 
       {assessments.status === 'loading' && (
         <p className="loading" role="status">
@@ -29,12 +29,10 @@ export function AssessmentsPage() {
 
       {assessments.status === 'ready' && assessments.data.length > 0 && (
         <div className="course-grid">
-          {assessments.data.map((assessment) => (
+          {assessments.data.map((assessment, index) => (
             <article key={assessment.id} className="course-card">
               <div className="course-card__head">
-                <span className="tile" aria-hidden="true">
-                  <ChartIcon size={22} />
-                </span>
+                <span className="label">Assessment / {String(index + 1).padStart(2, '0')}</span>
                 <Link to={`/courses/${assessment.course.slug}`} className="chip">
                   {assessment.course.title}
                 </Link>

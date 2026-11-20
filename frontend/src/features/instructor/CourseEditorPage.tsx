@@ -21,8 +21,10 @@ import { levelLabel } from '../courses/levels'
 import { CourseForm } from './CourseForm'
 import { CourseStatusChip } from './CourseStatusChip'
 import { ScopeControl } from './ScopeControl'
+import { useConfirm } from '../../app/useConfirm'
 
 export function CourseEditorPage() {
+  const confirm = useConfirm()
   const { id = '' } = useParams()
   const courseId = Number(id)
   const navigate = useNavigate()
@@ -91,19 +93,27 @@ export function CourseEditorPage() {
   }
 
   async function withdraw() {
-    const question =
-      reviewStatus === 'APPROVED'
+    const offline = reviewStatus === 'APPROVED'
+    const ok = await confirm({
+      title: offline ? 'Take this course offline?' : 'Withdraw from review?',
+      message: offline
         ? `Take "${title}" offline? Students will stop seeing it until an admin approves it again.`
-        : `Withdraw "${title}" from review? You can edit it and submit it again.`
-    if (window.confirm(question)) {
+        : `Withdraw "${title}" from review? You can edit it and submit it again.`,
+      confirmLabel: offline ? 'Take offline' : 'Withdraw',
+    })
+    if (ok) {
       await run(() => withdrawCourse(courseId))
     }
   }
 
   async function removeCourse() {
-    if (!window.confirm(`Delete "${title}"? Its lessons and students' progress on them will be deleted too.`)) {
-      return
-    }
+    const ok = await confirm({
+      title: 'Delete this course?',
+      message: `Delete "${title}"? Its lessons and students' progress on them will be deleted too.`,
+      confirmLabel: 'Delete course',
+      danger: true,
+    })
+    if (!ok) return
     setActionError(null)
     try {
       await deleteCourse(courseId)
@@ -281,10 +291,14 @@ export function CourseEditorPage() {
                     <button
                       type="button"
                       className="button button--danger button--small"
-                      onClick={() => {
-                        if (window.confirm(`Delete the lesson "${lesson.title}"?`)) {
-                          void run(() => deleteLesson(lesson.id))
-                        }
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: 'Delete this lesson?',
+                          message: `Delete the lesson "${lesson.title}"?`,
+                          confirmLabel: 'Delete lesson',
+                          danger: true,
+                        })
+                        if (ok) void run(() => deleteLesson(lesson.id))
                       }}
                     >
                       Delete

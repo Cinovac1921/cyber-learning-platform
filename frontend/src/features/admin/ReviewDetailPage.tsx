@@ -7,8 +7,10 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { levelLabel } from '../courses/levels'
 import { LessonContent } from '../lessons/LessonContent'
+import { useConfirm } from '../../app/useConfirm'
 
 export function ReviewDetailPage() {
+  const confirm = useConfirm()
   const { id = '' } = useParams()
   const courseId = Number(id)
   const navigate = useNavigate()
@@ -88,10 +90,13 @@ export function ReviewDetailPage() {
                 type="button"
                 className="button"
                 disabled={busy}
-                onClick={() => {
-                  if (window.confirm(`Put "${course.title}" live in the public library?`)) {
-                    void decide(() => approveReview(courseId))
-                  }
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: 'Approve this course?',
+                    message: `Put "${course.title}" live in the public library?`,
+                    confirmLabel: 'Approve',
+                  })
+                  if (ok) void decide(() => approveReview(courseId))
                 }}
               >
                 Approve

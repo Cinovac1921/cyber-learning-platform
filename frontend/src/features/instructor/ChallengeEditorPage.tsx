@@ -15,8 +15,10 @@ import { PageHeader } from '../../components/PageHeader'
 import type { ChallengeInput } from '../../types/challenges'
 import { MAX_FILE_BYTES, categoryLabel, formatBytes } from '../challenges/meta'
 import { ChallengeForm } from './ChallengeForm'
+import { useConfirm } from '../../app/useConfirm'
 
 export function ChallengeEditorPage() {
+  const confirm = useConfirm()
   const { challengeId = '' } = useParams()
   const id = Number(challengeId)
   const navigate = useNavigate()
@@ -84,9 +86,13 @@ export function ChallengeEditorPage() {
   }
 
   async function removeChallenge() {
-    if (!window.confirm(`Delete "${title}"? Its file and every student's solve will be deleted too.`)) {
-      return
-    }
+    const ok = await confirm({
+      title: 'Delete this challenge?',
+      message: `Delete "${title}"? Its file and every student's solve will be deleted too.`,
+      confirmLabel: 'Delete challenge',
+      danger: true,
+    })
+    if (!ok) return
     setActionError(null)
     try {
       await deleteChallenge(id)
@@ -161,10 +167,14 @@ export function ChallengeEditorPage() {
               <button
                 type="button"
                 className="button button--danger button--small"
-                onClick={() => {
-                  if (window.confirm('Remove this file from the challenge?')) {
-                    void run(() => removeChallengeFile(id))
-                  }
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: 'Remove this file?',
+                    message: 'Remove this file from the challenge?',
+                    confirmLabel: 'Remove',
+                    danger: true,
+                  })
+                  if (ok) void run(() => removeChallengeFile(id))
                 }}
               >
                 Remove

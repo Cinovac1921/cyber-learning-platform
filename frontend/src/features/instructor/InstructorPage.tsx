@@ -18,19 +18,23 @@ export function InstructorPage() {
         title="Instructor"
         description="Create and manage your courses and lessons."
         actions={
-          <>
-            <Link to="/instructor/library" className="button button--quiet">
-              Library
-            </Link>
-            <Link to="/instructor/challenges" className="button button--quiet">
-              Challenges
-            </Link>
-            <Link to="/instructor/courses/new" className="button">
-              + New course
-            </Link>
-          </>
+          <Link to="/instructor/courses/new" className="button">
+            + New course
+          </Link>
         }
       />
+
+      <nav className="tab-row" aria-label="Instructor sections">
+        <span className="tab-row__item is-current" aria-current="page">
+          Courses
+        </span>
+        <Link to="/instructor/library" className="tab-row__item">
+          Library
+        </Link>
+        <Link to="/instructor/challenges" className="tab-row__item">
+          Challenges
+        </Link>
+      </nav>
 
       <section className="classrooms" aria-labelledby="my-classrooms-title">
         <div className="editor__heading">

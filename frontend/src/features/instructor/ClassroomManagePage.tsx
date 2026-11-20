@@ -11,12 +11,14 @@ import {
 import { useReloadableResource } from '../../app/useResource'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
+import { useConfirm } from '../../app/useConfirm'
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 export function ClassroomManagePage() {
+  const confirm = useConfirm()
   const { id = '' } = useParams()
   const classroomId = Number(id)
   const navigate = useNavigate()
@@ -79,7 +81,13 @@ export function ClassroomManagePage() {
   }
 
   async function removeClassroom() {
-    if (!window.confirm(`Delete the classroom "${name}"? Its students will be removed from it.`)) return
+    const ok = await confirm({
+      title: 'Delete this classroom?',
+      message: `Delete the classroom "${name}"? Its students will be removed from it.`,
+      confirmLabel: 'Delete classroom',
+      danger: true,
+    })
+    if (!ok) return
     setActionError(null)
     try {
       await deleteClassroom(classroomId)
@@ -143,10 +151,13 @@ export function ClassroomManagePage() {
           <button
             type="button"
             className="button button--quiet button--small"
-            onClick={() => {
-              if (window.confirm('Make a new code? The old one stops working. Students already in the classroom stay.')) {
-                void run(() => regenerateJoinCode(classroomId))
-              }
+            onClick={async () => {
+              const ok = await confirm({
+                title: 'Make a new code?',
+                message: 'The old one stops working. Students already in the classroom stay.',
+                confirmLabel: 'Make new code',
+              })
+              if (ok) void run(() => regenerateJoinCode(classroomId))
             }}
           >
             New code
@@ -230,10 +241,14 @@ export function ClassroomManagePage() {
                         type="button"
                         className="button button--danger button--small"
                         aria-label={`Remove ${member.displayName} from the classroom`}
-                        onClick={() => {
-                          if (window.confirm(`Remove ${member.displayName} from "${name}"? Their progress is kept.`)) {
-                            void run(() => removeMember(classroomId, member.userId))
-                          }
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: 'Remove this student?',
+                            message: `Remove ${member.displayName} from "${name}"? Their progress is kept.`,
+                            confirmLabel: 'Remove',
+                            danger: true,
+                          })
+                          if (ok) void run(() => removeMember(classroomId, member.userId))
                         }}
                       >
                         Remove
